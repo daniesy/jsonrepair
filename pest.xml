@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php"
+         colors="true"
+         verbose="true"
+         cacheResult="false"
+         cacheResultFile=".phpunit.result.cache"
+>
+    <testsuites>
+        <testsuite name="unit">
+            <file>tests/JsonRepairTest.php</file>
+        </testsuite>
+        <testsuite name="streaming">
+            <file>tests/StreamingJsonRepairTest.php</file>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </source>
+    <coverage>
+        <report>
+            <html outputDirectory="coverage/html"/>
+            <text outputFile="php://stdout"/>
+        </report>
+    </coverage>
+</phpunit>

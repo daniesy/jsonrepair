@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate Release
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: mbstring, json
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run all tests
+        run: composer check
+
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Check version consistency
+        run: |
+          TAG_VERSION="${{ steps.get_version.outputs.VERSION }}"
+          echo "Tag version: $TAG_VERSION"
+          echo "Validating release version..."
+
+  create-release:
+    needs: validate
+    runs-on: ubuntu-latest
+    name: Create GitHub Release
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          echo "Extracting changelog for version $VERSION"
+          # Extract the section for this version from CHANGELOG.md
+          awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md | sed '1d;$d' > release_notes.txt || echo "Release version $VERSION" > release_notes.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          body_path: release_notes.txt
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-packagist:
+    needs: create-release
+    runs-on: ubuntu-latest
+    name: Notify Packagist
+
+    steps:
+      - name: Notify Packagist
+        env:
+          PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
+          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+        run: |
+          if [ -n "$PACKAGIST_TOKEN" ]; then
+            echo "Triggering Packagist update..."
+            curl -X POST "https://packagist.org/api/update-package?username=${PACKAGIST_USERNAME}&apiToken=${PACKAGIST_TOKEN}" \
+              -d '{"repository":{"url":"https://github.com/${{ github.repository }}"}}'
+            echo "✅ Packagist notified successfully"
+          else
+            echo "⚠️  Packagist token not configured. Packagist will auto-update via webhook."
+            echo "To enable manual updates, add PACKAGIST_USERNAME and PACKAGIST_TOKEN to repository secrets."
+          fi

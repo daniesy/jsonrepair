@@ -1,0 +1,85 @@
+{
+    "name": "jsonrepair/jsonrepair",
+    "description": "Repair invalid JSON documents - A modern PHP 8.4+ port with streaming support. Fixes common issues: missing quotes, trailing commas, comments, single quotes, and more.",
+    "type": "library",
+    "keywords": [
+        "json",
+        "repair",
+        "fix",
+        "parse",
+        "invalid",
+        "malformed",
+        "broken",
+        "stream",
+        "streaming",
+        "generator",
+        "parser",
+        "mongodb",
+        "ndjson"
+    ],
+    "homepage": "https://github.com/daniesy/jsonrepair-php",
+    "license": "ISC",
+    "authors": [
+        {
+            "name": "Jos de Jong",
+            "homepage": "https://github.com/josdejong",
+            "role": "Original JavaScript/TypeScript Author"
+        },
+        {
+            "name": "Dan Florian",
+            "homepage": "https://github.com/daniesy",
+            "role": "PHP Port Author"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/daniesy/jsonrepair/issues",
+        "source": "https://github.com/daniesy/jsonrepair"
+    },
+    "require": {
+        "php": "^8.4"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "JsonRepair\\": "src/"
+        },
+        "files": [
+            "src/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test:unit": "vendor/bin/pest tests/JsonRepairTest.php",
+        "test:streaming": "vendor/bin/pest tests/StreamingJsonRepairTest.php",
+        "test:coverage": "vendor/bin/pest --coverage",
+        "test:coverage-html": "vendor/bin/pest --coverage-html coverage",
+        "check": [
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Run all tests",
+        "test:unit": "Run unit tests only",
+        "test:streaming": "Run streaming tests only",
+        "test:coverage": "Run tests with coverage",
+        "test:coverage-html": "Generate HTML coverage report",
+        "check": "Run all checks (tests)"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

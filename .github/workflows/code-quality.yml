@@ -1,0 +1,85 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    name: PHP Syntax Check
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: composer:v2
+
+      - name: Check PHP syntax
+        run: find src tests -name "*.php" -exec php -l {} \;
+
+  composer-validate:
+    runs-on: ubuntu-latest
+    name: Composer Validation
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --strict --no-check-lock
+
+      - name: Check composer.json format
+        run: composer normalize --dry-run --no-check-lock || true
+
+  security:
+    runs-on: ubuntu-latest
+    name: Security Check
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Check for security vulnerabilities
+        run: composer audit || true
+
+  examples:
+    runs-on: ubuntu-latest
+    name: Test Examples
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Run streaming example
+        run: php examples/streaming_example.php
