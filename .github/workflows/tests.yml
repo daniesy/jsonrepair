@@ -48,18 +48,12 @@ jobs:
 
       - name: Run test suite
         run: composer test
-        env:
-          COMPOSER_PROCESS_TIMEOUT: 300
 
       - name: Run unit tests
         run: composer test:unit
-        env:
-          COMPOSER_PROCESS_TIMEOUT: 300
 
       - name: Run streaming tests
         run: composer test:streaming
-        env:
-          COMPOSER_PROCESS_TIMEOUT: 300
 
   coverage:
     runs-on: ubuntu-latest
@@ -82,5 +76,3 @@ jobs:
 
       - name: Run tests with coverage
         run: composer test:coverage
-        env:
-          COMPOSER_PROCESS_TIMEOUT: 300

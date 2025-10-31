@@ -102,7 +102,7 @@ php examples/streaming_example.php
 
 ## Testing
 
-Run the test suite using Pest:
+Run the test suite using PHPUnit:
 
 ```bash
 # Run all tests
@@ -123,8 +123,8 @@ composer test:coverage-html
 
 ### Test Results
 
-**All 81 tests passing (100% pass rate)** ✅
-- 66 regular (non-streaming) tests
+**All 89 tests passing (100% pass rate)** ✅
+- 74 regular (non-streaming) tests
 - 15 streaming tests
 
 All functionality from the original JavaScript/TypeScript library has been successfully ported and verified, including streaming support.

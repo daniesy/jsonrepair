@@ -3,461 +3,512 @@
 declare(strict_types=1);
 
 use JsonRepair\Utils\JSONRepairError;
+use PHPUnit\Framework\TestCase;
 use function JsonRepair\jsonrepair;
 
-// Helper function
-function assertRepair(string $text): void
+final class JsonRepairTest extends TestCase
 {
-    expect(jsonrepair($text))->toBe($text);
-}
+    // Helper function
+    private function assertRepair(string $text): void
+    {
+        $this->assertSame($text, jsonrepair($text));
+    }
 
-describe('parse valid JSON', function () {
-    test('parse full JSON object', function () {
+    // parse valid JSON tests
+    public function testParseFullJsonObject(): void
+    {
         $text = '{"a":2.3e100,"b":"str","c":null,"d":false,"e":[1,2,3]}';
-        expect(jsonrepair($text))->toBe($text);
-    });
+        $this->assertSame($text, jsonrepair($text));
+    }
 
-    test('parse whitespace', function () {
-        assertRepair("  { \n } \t ");
-    });
+    public function testParseWhitespace(): void
+    {
+        $this->assertRepair("  { \n } \t ");
+    }
 
-    test('parse object', function () {
-        assertRepair('{}');
-        assertRepair('{  }');
-        assertRepair('{"a": {}}');
-        assertRepair('{"a": "b"}');
-        assertRepair('{"a": 2}');
-    });
+    public function testParseObject(): void
+    {
+        $this->assertRepair('{}');
+        $this->assertRepair('{  }');
+        $this->assertRepair('{"a": {}}');
+        $this->assertRepair('{"a": "b"}');
+        $this->assertRepair('{"a": 2}');
+    }
 
-    test('parse array', function () {
-        assertRepair('[]');
-        assertRepair('[  ]');
-        assertRepair('[1,2,3]');
-        assertRepair('[ 1 , 2 , 3 ]');
-        assertRepair('[1,2,[3,4,5]]');
-        assertRepair('[{}]');
-        assertRepair('{"a":[]}');
-        assertRepair('[1, "hi", true, false, null, {}, []]');
-    });
+    public function testParseArray(): void
+    {
+        $this->assertRepair('[]');
+        $this->assertRepair('[  ]');
+        $this->assertRepair('[1,2,3]');
+        $this->assertRepair('[ 1 , 2 , 3 ]');
+        $this->assertRepair('[1,2,[3,4,5]]');
+        $this->assertRepair('[{}]');
+        $this->assertRepair('{"a":[]}');
+        $this->assertRepair('[1, "hi", true, false, null, {}, []]');
+    }
 
-    test('parse number', function () {
-        assertRepair('23');
-        assertRepair('0');
-        assertRepair('0e+2');
-        assertRepair('0.0');
-        assertRepair('-0');
-        assertRepair('2.3');
-        assertRepair('2300e3');
-        assertRepair('2300e+3');
-        assertRepair('2300e-3');
-        assertRepair('-2');
-        assertRepair('2e-3');
-        assertRepair('2.3e-3');
-    });
+    public function testParseNumber(): void
+    {
+        $this->assertRepair('23');
+        $this->assertRepair('0');
+        $this->assertRepair('0e+2');
+        $this->assertRepair('0.0');
+        $this->assertRepair('-0');
+        $this->assertRepair('2.3');
+        $this->assertRepair('2300e3');
+        $this->assertRepair('2300e+3');
+        $this->assertRepair('2300e-3');
+        $this->assertRepair('-2');
+        $this->assertRepair('2e-3');
+        $this->assertRepair('2.3e-3');
+    }
 
-    test('parse string', function () {
-        assertRepair('"str"');
-        assertRepair('"\\"\\\\\\/\\b\\f\\n\\r\\t"');
-        assertRepair('"\\u260E"');
-    });
+    public function testParseString(): void
+    {
+        $this->assertRepair('"str"');
+        $this->assertRepair('"\\"\\\\\\/\\b\\f\\n\\r\\t"');
+        $this->assertRepair('"\\u260E"');
+    }
 
-    test('parse keywords', function () {
-        assertRepair('true');
-        assertRepair('false');
-        assertRepair('null');
-    });
+    public function testParseKeywords(): void
+    {
+        $this->assertRepair('true');
+        $this->assertRepair('false');
+        $this->assertRepair('null');
+    }
 
-    test('correctly handle strings equaling a JSON delimiter', function () {
-        assertRepair('""');
-        assertRepair('"["');
-        assertRepair('"]"');
-        assertRepair('"{"');
-        assertRepair('"}"');
-        assertRepair('":"');
-        assertRepair('","');
-    });
+    public function testCorrectlyHandleStringsEqualingAJsonDelimiter(): void
+    {
+        $this->assertRepair('""');
+        $this->assertRepair('"["');
+        $this->assertRepair('"]"');
+        $this->assertRepair('"{"');
+        $this->assertRepair('"}"');
+        $this->assertRepair('":"');
+        $this->assertRepair('","');
+    }
 
-    test('supports unicode characters in a string', function () {
-        expect(jsonrepair('"★"'))->toBe('"★"');
-        expect(jsonrepair('"😀"'))->toBe('"😀"');
-        expect(jsonrepair('"йнформация"'))->toBe('"йнформация"');
-    });
+    public function testSupportsUnicodeCharactersInAString(): void
+    {
+        $this->assertSame('"★"', jsonrepair('"★"'));
+        $this->assertSame('"😀"', jsonrepair('"😀"'));
+        $this->assertSame('"йнформация"', jsonrepair('"йнформация"'));
+    }
 
-    test('supports escaped unicode characters in a string', function () {
-        expect(jsonrepair('"\\u2605"'))->toBe('"\\u2605"');
-        expect(jsonrepair('"\\u2605A"'))->toBe('"\\u2605A"');
-        expect(jsonrepair('"\\ud83d\\ude00"'))->toBe('"\\ud83d\\ude00"');
-    });
+    public function testSupportsEscapedUnicodeCharactersInAString(): void
+    {
+        $this->assertSame('"\\u2605"', jsonrepair('"\\u2605"'));
+        $this->assertSame('"\\u2605A"', jsonrepair('"\\u2605A"'));
+        $this->assertSame('"\\ud83d\\ude00"', jsonrepair('"\\ud83d\\ude00"'));
+    }
 
-    test('supports unicode characters in a key', function () {
-        expect(jsonrepair('{"★":true}'))->toBe('{"★":true}');
-        expect(jsonrepair('{"😀":true}'))->toBe('{"😀":true}');
-    });
-});
+    public function testSupportsUnicodeCharactersInAKey(): void
+    {
+        $this->assertSame('{"★":true}', jsonrepair('{"★":true}'));
+        $this->assertSame('{"😀":true}', jsonrepair('{"😀":true}'));
+    }
 
-describe('repair invalid JSON', function () {
-    test('should add missing quotes', function () {
-        expect(jsonrepair('abc'))->toBe('"abc"');
-        expect(jsonrepair('hello   world'))->toBe('"hello   world"');
-        expect(jsonrepair("{\nmessage: hello world\n}"))->toBe("{\n\"message\": \"hello world\"\n}");
-        expect(jsonrepair('{a:2}'))->toBe('{"a":2}');
-        expect(jsonrepair('{a: 2}'))->toBe('{"a": 2}');
-        expect(jsonrepair('{2: 2}'))->toBe('{"2": 2}');
-        expect(jsonrepair('{true: 2}'))->toBe('{"true": 2}');
-        expect(jsonrepair("{\n  a: 2\n}"))->toBe("{\n  \"a\": 2\n}");
-        expect(jsonrepair('[a,b]'))->toBe('["a","b"]');
-        expect(jsonrepair("[\na,\nb\n]"))->toBe("[\n\"a\",\n\"b\"\n]");
-    });
+    // repair invalid JSON tests
+    public function testShouldAddMissingQuotes(): void
+    {
+        $this->assertSame('"abc"', jsonrepair('abc'));
+        $this->assertSame('"hello   world"', jsonrepair('hello   world'));
+        $this->assertSame("{\n\"message\": \"hello world\"\n}", jsonrepair("{\nmessage: hello world\n}"));
+        $this->assertSame('{"a":2}', jsonrepair('{a:2}'));
+        $this->assertSame('{"a": 2}', jsonrepair('{a: 2}'));
+        $this->assertSame('{"2": 2}', jsonrepair('{2: 2}'));
+        $this->assertSame('{"true": 2}', jsonrepair('{true: 2}'));
+        $this->assertSame("{\n  \"a\": 2\n}", jsonrepair("{\n  a: 2\n}"));
+        $this->assertSame('["a","b"]', jsonrepair('[a,b]'));
+        $this->assertSame("[\n\"a\",\n\"b\"\n]", jsonrepair("[\na,\nb\n]"));
+    }
 
-    test('should repair an unquoted url', function () {
-        expect(jsonrepair('https://www.bible.com/'))->toBe('"https://www.bible.com/"');
-        expect(jsonrepair('{url:https://www.bible.com/}'))->toBe('{"url":"https://www.bible.com/"}');
-        expect(jsonrepair('{url:https://www.bible.com/,"id":2}'))->toBe('{"url":"https://www.bible.com/","id":2}');
-        expect(jsonrepair('[https://www.bible.com/]'))->toBe('["https://www.bible.com/"]');
-        expect(jsonrepair('[https://www.bible.com/,2]'))->toBe('["https://www.bible.com/",2]');
-    });
+    public function testShouldRepairAnUnquotedUrl(): void
+    {
+        $this->assertSame('"https://www.bible.com/"', jsonrepair('https://www.bible.com/'));
+        $this->assertSame('{"url":"https://www.bible.com/"}', jsonrepair('{url:https://www.bible.com/}'));
+        $this->assertSame('{"url":"https://www.bible.com/","id":2}', jsonrepair('{url:https://www.bible.com/,"id":2}'));
+        $this->assertSame('["https://www.bible.com/"]', jsonrepair('[https://www.bible.com/]'));
+        $this->assertSame('["https://www.bible.com/",2]', jsonrepair('[https://www.bible.com/,2]'));
+    }
 
-    test('should repair an url with missing end quote', function () {
-        expect(jsonrepair('"https://www.bible.com/'))->toBe('"https://www.bible.com/"');
-        expect(jsonrepair('{"url":"https://www.bible.com/}'))->toBe('{"url":"https://www.bible.com/"}');
-        expect(jsonrepair('{"url":"https://www.bible.com/,"id":2}'))->toBe('{"url":"https://www.bible.com/","id":2}');
-        expect(jsonrepair('["https://www.bible.com/]'))->toBe('["https://www.bible.com/"]');
-        expect(jsonrepair('["https://www.bible.com/,2]'))->toBe('["https://www.bible.com/",2]');
-    });
+    public function testShouldRepairAnUrlWithMissingEndQuote(): void
+    {
+        $this->assertSame('"https://www.bible.com/"', jsonrepair('"https://www.bible.com/'));
+        $this->assertSame('{"url":"https://www.bible.com/"}', jsonrepair('{"url":"https://www.bible.com/}'));
+        $this->assertSame('{"url":"https://www.bible.com/","id":2}', jsonrepair('{"url":"https://www.bible.com/,"id":2}'));
+        $this->assertSame('["https://www.bible.com/"]', jsonrepair('["https://www.bible.com/]'));
+        $this->assertSame('["https://www.bible.com/",2]', jsonrepair('["https://www.bible.com/,2]'));
+    }
 
-    test('should add missing end quote', function () {
-        expect(jsonrepair('"abc'))->toBe('"abc"');
-        expect(jsonrepair("'abc"))->toBe('"abc"');
-        expect(jsonrepair('"12:20'))->toBe('"12:20"');
-        expect(jsonrepair('{"time":"12:20}'))->toBe('{"time":"12:20"}');
-        expect(jsonrepair('{"date":2024-10-18T18:35:22.229Z}'))->toBe('{"date":"2024-10-18T18:35:22.229Z"}');
-        expect(jsonrepair('"She said:'))->toBe('"She said:"');
-        expect(jsonrepair('{"text": "She said:'))->toBe('{"text": "She said:"}');
-        expect(jsonrepair('["hello, world]'))->toBe('["hello", "world"]');
-        expect(jsonrepair('["hello,"world"]'))->toBe('["hello","world"]');
-        expect(jsonrepair('{"a":"b}'))->toBe('{"a":"b"}');
-        expect(jsonrepair('{"a":"b,"c":"d"}'))->toBe('{"a":"b","c":"d"}');
-        expect(jsonrepair('{"a":"b,c,"d":"e"}'))->toBe('{"a":"b,c","d":"e"}');
-        expect(jsonrepair('{a:"b,c,"d":"e"}'))->toBe('{"a":"b,c","d":"e"}');
-        expect(jsonrepair('["b,c,]'))->toBe('["b","c"]');
-        expect(jsonrepair("\u{2018}abc"))->toBe('"abc"');
-        expect(jsonrepair('"it\'s working'))->toBe('"it\'s working"');
-        expect(jsonrepair('["abc+/*comment*/"def"]'))->toBe('["abcdef"]');
-        expect(jsonrepair('["abc/*comment*/+"def"]'))->toBe('["abcdef"]');
-        expect(jsonrepair('["abc,/*comment*/"def"]'))->toBe('["abc","def"]');
-    });
+    public function testShouldAddMissingEndQuote(): void
+    {
+        $this->assertSame('"abc"', jsonrepair('"abc'));
+        $this->assertSame('"abc"', jsonrepair("'abc"));
+        $this->assertSame('"12:20"', jsonrepair('"12:20'));
+        $this->assertSame('{"time":"12:20"}', jsonrepair('{"time":"12:20}'));
+        $this->assertSame('{"date":"2024-10-18T18:35:22.229Z"}', jsonrepair('{"date":2024-10-18T18:35:22.229Z}'));
+        $this->assertSame('"She said:"', jsonrepair('"She said:'));
+        $this->assertSame('{"text": "She said:"}', jsonrepair('{"text": "She said:'));
+        $this->assertSame('["hello", "world"]', jsonrepair('["hello, world]'));
+        $this->assertSame('["hello","world"]', jsonrepair('["hello,"world"]'));
+        $this->assertSame('{"a":"b"}', jsonrepair('{"a":"b}'));
+        $this->assertSame('{"a":"b","c":"d"}', jsonrepair('{"a":"b,"c":"d"}'));
+        $this->assertSame('{"a":"b,c","d":"e"}', jsonrepair('{"a":"b,c,"d":"e"}'));
+        $this->assertSame('{"a":"b,c","d":"e"}', jsonrepair('{a:"b,c,"d":"e"}'));
+        $this->assertSame('["b","c"]', jsonrepair('["b,c,]'));
+        $this->assertSame('"abc"', jsonrepair("\u{2018}abc"));
+        $this->assertSame('"it\'s working"', jsonrepair('"it\'s working'));
+        $this->assertSame('["abcdef"]', jsonrepair('["abc+/*comment*/"def"]'));
+        $this->assertSame('["abcdef"]', jsonrepair('["abc/*comment*/+"def"]'));
+        $this->assertSame('["abc","def"]', jsonrepair('["abc,/*comment*/"def"]'));
+    }
 
-    test('should repair truncated JSON', function () {
-        expect(jsonrepair('"foo'))->toBe('"foo"');
-        expect(jsonrepair('['))->toBe('[]');
-        expect(jsonrepair('["foo'))->toBe('["foo"]');
-        expect(jsonrepair('["foo"'))->toBe('["foo"]');
-        expect(jsonrepair('["foo",'))->toBe('["foo"]');
-        expect(jsonrepair('{"foo":"bar"'))->toBe('{"foo":"bar"}');
-        expect(jsonrepair('{"foo":"bar'))->toBe('{"foo":"bar"}');
-        expect(jsonrepair('{"foo":'))->toBe('{"foo":null}');
-        expect(jsonrepair('{"foo"'))->toBe('{"foo":null}');
-        expect(jsonrepair('{"foo'))->toBe('{"foo":null}');
-        expect(jsonrepair('{'))->toBe('{}');
-        expect(jsonrepair('2.'))->toBe('2.0');
-        expect(jsonrepair('2e'))->toBe('2e0');
-        expect(jsonrepair('2e+'))->toBe('2e+0');
-        expect(jsonrepair('2e-'))->toBe('2e-0');
-        expect(jsonrepair('{"foo":"bar\\u20'))->toBe('{"foo":"bar"}');
-        expect(jsonrepair('"\\u'))->toBe('""');
-        expect(jsonrepair('"\\u2'))->toBe('""');
-        expect(jsonrepair('"\\u260'))->toBe('""');
-        expect(jsonrepair('"\\u2605'))->toBe('"\\u2605"');
-        expect(jsonrepair('{"s \\ud'))->toBe('{"s": null}');
-        expect(jsonrepair('{"message": "it\'s working'))->toBe('{"message": "it\'s working"}');
-        expect(jsonrepair('{"text":"Hello Sergey,I hop'))->toBe('{"text":"Hello Sergey,I hop"}');
-        expect(jsonrepair('{"message": "with, multiple, commma\'s, you see?'))->toBe('{"message": "with, multiple, commma\'s, you see?"}');
-    });
+    public function testShouldRepairTruncatedJson(): void
+    {
+        $this->assertSame('"foo"', jsonrepair('"foo'));
+        $this->assertSame('[]', jsonrepair('['));
+        $this->assertSame('["foo"]', jsonrepair('["foo'));
+        $this->assertSame('["foo"]', jsonrepair('["foo"'));
+        $this->assertSame('["foo"]', jsonrepair('["foo",'));
+        $this->assertSame('{"foo":"bar"}', jsonrepair('{"foo":"bar"'));
+        $this->assertSame('{"foo":"bar"}', jsonrepair('{"foo":"bar'));
+        $this->assertSame('{"foo":null}', jsonrepair('{"foo":'));
+        $this->assertSame('{"foo":null}', jsonrepair('{"foo"'));
+        $this->assertSame('{"foo":null}', jsonrepair('{"foo'));
+        $this->assertSame('{}', jsonrepair('{'));
+        $this->assertSame('2.0', jsonrepair('2.'));
+        $this->assertSame('2e0', jsonrepair('2e'));
+        $this->assertSame('2e+0', jsonrepair('2e+'));
+        $this->assertSame('2e-0', jsonrepair('2e-'));
+        $this->assertSame('{"foo":"bar"}', jsonrepair('{"foo":"bar\\u20'));
+        $this->assertSame('""', jsonrepair('"\\u'));
+        $this->assertSame('""', jsonrepair('"\\u2'));
+        $this->assertSame('""', jsonrepair('"\\u260'));
+        $this->assertSame('"\\u2605"', jsonrepair('"\\u2605'));
+        $this->assertSame('{"s": null}', jsonrepair('{"s \\ud'));
+        $this->assertSame('{"message": "it\'s working"}', jsonrepair('{"message": "it\'s working'));
+        $this->assertSame('{"text":"Hello Sergey,I hop"}', jsonrepair('{"text":"Hello Sergey,I hop'));
+        $this->assertSame('{"message": "with, multiple, commma\'s, you see?"}', jsonrepair('{"message": "with, multiple, commma\'s, you see?'));
+    }
 
-    test('should repair ellipsis in an array', function () {
-        expect(jsonrepair('[1,2,3,...]'))->toBe('[1,2,3]');
-        expect(jsonrepair('[1, 2, 3, ... ]'))->toBe('[1, 2, 3  ]');
-        expect(jsonrepair('[1,2,3,/*comment1*/.../*comment2*/]'))->toBe('[1,2,3]');
-        expect(jsonrepair("[\n  1,\n  2,\n  3,\n  /*comment1*/  .../*comment2*/\n]"))->toBe("[\n  1,\n  2,\n  3\n    \n]");
-        expect(jsonrepair('{"array":[1,2,3,...]}'))->toBe('{"array":[1,2,3]}');
-        expect(jsonrepair('[1,2,3,...,9]'))->toBe('[1,2,3,9]');
-        expect(jsonrepair('[...,7,8,9]'))->toBe('[7,8,9]');
-        expect(jsonrepair('[..., 7,8,9]'))->toBe('[ 7,8,9]');
-        expect(jsonrepair('[...]'))->toBe('[]');
-        expect(jsonrepair('[ ... ]'))->toBe('[  ]');
-    });
+    public function testShouldRepairEllipsisInAnArray(): void
+    {
+        $this->assertSame('[1,2,3]', jsonrepair('[1,2,3,...]'));
+        $this->assertSame('[1, 2, 3  ]', jsonrepair('[1, 2, 3, ... ]'));
+        $this->assertSame('[1,2,3]', jsonrepair('[1,2,3,/*comment1*/.../*comment2*/]'));
+        $this->assertSame("[\n  1,\n  2,\n  3\n    \n]", jsonrepair("[\n  1,\n  2,\n  3,\n  /*comment1*/  .../*comment2*/\n]"));
+        $this->assertSame('{"array":[1,2,3]}', jsonrepair('{"array":[1,2,3,...]}'));
+        $this->assertSame('[1,2,3,9]', jsonrepair('[1,2,3,...,9]'));
+        $this->assertSame('[7,8,9]', jsonrepair('[...,7,8,9]'));
+        $this->assertSame('[ 7,8,9]', jsonrepair('[..., 7,8,9]'));
+        $this->assertSame('[]', jsonrepair('[...]'));
+        $this->assertSame('[  ]', jsonrepair('[ ... ]'));
+    }
 
-    test('should repair ellipsis in an object', function () {
-        expect(jsonrepair('{"a":2,"b":3,...}'))->toBe('{"a":2,"b":3}');
-        expect(jsonrepair('{"a":2,"b":3,/*comment1*/.../*comment2*/}'))->toBe('{"a":2,"b":3}');
-        expect(jsonrepair("{\n  \"a\":2,\n  \"b\":3,\n  /*comment1*/.../*comment2*/\n}"))->toBe("{\n  \"a\":2,\n  \"b\":3\n  \n}");
-        expect(jsonrepair('{"a":2,"b":3, ... }'))->toBe('{"a":2,"b":3  }');
-        expect(jsonrepair('{"nested":{"a":2,"b":3, ... }}'))->toBe('{"nested":{"a":2,"b":3  }}');
-        expect(jsonrepair('{"a":2,"b":3,...,"z":26}'))->toBe('{"a":2,"b":3,"z":26}');
-        expect(jsonrepair('{...}'))->toBe('{}');
-        expect(jsonrepair('{ ... }'))->toBe('{  }');
-    });
+    public function testShouldRepairEllipsisInAnObject(): void
+    {
+        $this->assertSame('{"a":2,"b":3}', jsonrepair('{"a":2,"b":3,...}'));
+        $this->assertSame('{"a":2,"b":3}', jsonrepair('{"a":2,"b":3,/*comment1*/.../*comment2*/}'));
+        $this->assertSame("{\n  \"a\":2,\n  \"b\":3\n  \n}", jsonrepair("{\n  \"a\":2,\n  \"b\":3,\n  /*comment1*/.../*comment2*/\n}"));
+        $this->assertSame('{"a":2,"b":3  }', jsonrepair('{"a":2,"b":3, ... }'));
+        $this->assertSame('{"nested":{"a":2,"b":3  }}', jsonrepair('{"nested":{"a":2,"b":3, ... }}'));
+        $this->assertSame('{"a":2,"b":3,"z":26}', jsonrepair('{"a":2,"b":3,...,"z":26}'));
+        $this->assertSame('{}', jsonrepair('{...}'));
+        $this->assertSame('{  }', jsonrepair('{ ... }'));
+    }
 
-    test('should add missing start quote', function () {
-        expect(jsonrepair('abc"'))->toBe('"abc"');
-        expect(jsonrepair('[a","b"]'))->toBe('["a","b"]');
-        expect(jsonrepair('[a",b"]'))->toBe('["a","b"]');
-        expect(jsonrepair('{"a":"foo","b":"bar"}'))->toBe('{"a":"foo","b":"bar"}');
-        expect(jsonrepair('{a":"foo","b":"bar"}'))->toBe('{"a":"foo","b":"bar"}');
-        expect(jsonrepair('{"a":"foo",b":"bar"}'))->toBe('{"a":"foo","b":"bar"}');
-        expect(jsonrepair('{"a":foo","b":"bar"}'))->toBe('{"a":"foo","b":"bar"}');
-    });
+    public function testShouldAddMissingStartQuote(): void
+    {
+        $this->assertSame('"abc"', jsonrepair('abc"'));
+        $this->assertSame('["a","b"]', jsonrepair('[a","b"]'));
+        $this->assertSame('["a","b"]', jsonrepair('[a",b"]'));
+        $this->assertSame('{"a":"foo","b":"bar"}', jsonrepair('{"a":"foo","b":"bar"}'));
+        $this->assertSame('{"a":"foo","b":"bar"}', jsonrepair('{a":"foo","b":"bar"}'));
+        $this->assertSame('{"a":"foo","b":"bar"}', jsonrepair('{"a":"foo",b":"bar"}'));
+        $this->assertSame('{"a":"foo","b":"bar"}', jsonrepair('{"a":foo","b":"bar"}'));
+    }
 
-    test('should stop at the first next return when missing an end quote', function () {
-        expect(jsonrepair("[\n\"abc,\n\"def\"\n]"))->toBe("[\n\"abc\",\n\"def\"\n]");
-        expect(jsonrepair("[\n\"abc,  \n\"def\"\n]"))->toBe("[\n\"abc\",  \n\"def\"\n]");
-        expect(jsonrepair("[\"abc]\n"))->toBe("[\"abc\"]\n");
-        expect(jsonrepair("[\"abc  ]\n"))->toBe("[\"abc\"  ]\n");
-        expect(jsonrepair("[\n[\n\"abc\n]\n]\n"))->toBe("[\n[\n\"abc\"\n]\n]\n");
-    });
+    public function testShouldStopAtTheFirstNextReturnWhenMissingAnEndQuote(): void
+    {
+        $this->assertSame("[\n\"abc\",\n\"def\"\n]", jsonrepair("[\n\"abc,\n\"def\"\n]"));
+        $this->assertSame("[\n\"abc\",  \n\"def\"\n]", jsonrepair("[\n\"abc,  \n\"def\"\n]"));
+        $this->assertSame("[\"abc\"]\n", jsonrepair("[\"abc]\n"));
+        $this->assertSame("[\"abc\"  ]\n", jsonrepair("[\"abc  ]\n"));
+        $this->assertSame("[\n[\n\"abc\"\n]\n]\n", jsonrepair("[\n[\n\"abc\n]\n]\n"));
+    }
 
-    test('should replace single quotes with double quotes', function () {
-        expect(jsonrepair("{'a':2}"))->toBe('{"a":2}');
-        expect(jsonrepair("{'a':'foo'}"))->toBe('{"a":"foo"}');
-        expect(jsonrepair('{"a":\'foo\'}'))->toBe('{"a":"foo"}');
-        expect(jsonrepair("{a:'foo',b:'bar'}"))->toBe('{"a":"foo","b":"bar"}');
-    });
+    public function testShouldReplaceSingleQuotesWithDoubleQuotes(): void
+    {
+        $this->assertSame('{"a":2}', jsonrepair("{'a':2}"));
+        $this->assertSame('{"a":"foo"}', jsonrepair("{'a':'foo'}"));
+        $this->assertSame('{"a":"foo"}', jsonrepair('{"a":\'foo\'}'));
+        $this->assertSame('{"a":"foo","b":"bar"}', jsonrepair("{a:'foo',b:'bar'}"));
+    }
 
-    test('should replace special quotes with double quotes', function () {
-        expect(jsonrepair('{"a":"b"}'))->toBe('{"a":"b"}');
-        expect(jsonrepair("{'a':'b'}"))->toBe('{"a":"b"}');
-        expect(jsonrepair('{`a´:`b´}'))->toBe('{"a":"b"}');
-    });
+    public function testShouldReplaceSpecialQuotesWithDoubleQuotes(): void
+    {
+        $this->assertSame('{"a":"b"}', jsonrepair('{"a":"b"}'));
+        $this->assertSame('{"a":"b"}', jsonrepair("{'a':'b'}"));
+        $this->assertSame('{"a":"b"}', jsonrepair('{`a´:`b´}'));
+    }
 
-    test('should not replace special quotes inside a normal string', function () {
+    public function testShouldNotReplaceSpecialQuotesInsideANormalString(): void
+    {
         $input1 = '"Rounded ' . "\u{201C}" . ' quote"';
         $expected1 = '"Rounded ' . "\u{201C}" . ' quote"';
-        expect(jsonrepair($input1))->toBe($expected1);
+        $this->assertSame($expected1, jsonrepair($input1));
 
         $input2 = "'Rounded " . "\u{201C}" . " quote'";
         $expected2 = '"Rounded ' . "\u{201C}" . ' quote"';
-        expect(jsonrepair($input2))->toBe($expected2);
+        $this->assertSame($expected2, jsonrepair($input2));
 
         $input3 = '"Rounded ' . "\u{2018}" . ' quote"';
         $expected3 = '"Rounded ' . "\u{2018}" . ' quote"';
-        expect(jsonrepair($input3))->toBe($expected3);
+        $this->assertSame($expected3, jsonrepair($input3));
 
         $input4 = "'" . 'Rounded ' . "\u{2018}" . " quote'";
         $expected4 = '"Rounded ' . "\u{2018}" . ' quote"';
-        expect(jsonrepair($input4))->toBe($expected4);
+        $this->assertSame($expected4, jsonrepair($input4));
 
-        expect(jsonrepair("'Double \" quote'"))->toBe('"Double \\" quote"');
-    });
+        $this->assertSame('"Double \\" quote"', jsonrepair("'Double \" quote'"));
+    }
 
-    test('should not crash when repairing quotes', function () {
-        expect(jsonrepair("{pattern: '\u{2019}'}"))->toBe("{\"pattern\": \"\u{2019}\"}");
-    });
+    public function testShouldNotCrashWhenRepairingQuotes(): void
+    {
+        $this->assertSame("{\"pattern\": \"\u{2019}\"}", jsonrepair("{pattern: '\u{2019}'}"));
+    }
 
-    test('should leave string content untouched', function () {
-        expect(jsonrepair('"{a:b}"'))->toBe('"{a:b}"');
-    });
+    public function testShouldLeaveStringContentUntouched(): void
+    {
+        $this->assertSame('"{a:b}"', jsonrepair('"{a:b}"'));
+    }
 
-    test('should add/remove escape characters', function () {
-        expect(jsonrepair('"foo\'bar"'))->toBe('"foo\'bar"');
-        expect(jsonrepair('"foo\\"bar"'))->toBe('"foo\\"bar"');
-        expect(jsonrepair("'foo\"bar'"))->toBe('"foo\\"bar"');
-        expect(jsonrepair("'foo\\'bar'"))->toBe('"foo\'bar"');
-        expect(jsonrepair('"foo\\\'bar"'))->toBe('"foo\'bar"');
-        expect(jsonrepair('"\\a"'))->toBe('"a"');
-    });
+    public function testShouldAddRemoveEscapeCharacters(): void
+    {
+        $this->assertSame('"foo\'bar"', jsonrepair('"foo\'bar"'));
+        $this->assertSame('"foo\\"bar"', jsonrepair('"foo\\"bar"'));
+        $this->assertSame('"foo\\"bar"', jsonrepair("'foo\"bar'"));
+        $this->assertSame('"foo\'bar"', jsonrepair("'foo\\'bar'"));
+        $this->assertSame('"foo\'bar"', jsonrepair('"foo\\\'bar"'));
+        $this->assertSame('"a"', jsonrepair('"\\a"'));
+    }
 
-    test('should repair a missing object value', function () {
-        expect(jsonrepair('{"a":}'))->toBe('{"a":null}');
-        expect(jsonrepair('{"a":,"b":2}'))->toBe('{"a":null,"b":2}');
-        expect(jsonrepair('{"a":'))->toBe('{"a":null}');
-    });
+    public function testShouldRepairAMissingObjectValue(): void
+    {
+        $this->assertSame('{"a":null}', jsonrepair('{"a":}'));
+        $this->assertSame('{"a":null,"b":2}', jsonrepair('{"a":,"b":2}'));
+        $this->assertSame('{"a":null}', jsonrepair('{"a":'));
+    }
 
-    test('should repair undefined values', function () {
-        expect(jsonrepair('{"a":undefined}'))->toBe('{"a":null}');
-        expect(jsonrepair('[undefined]'))->toBe('[null]');
-        expect(jsonrepair('undefined'))->toBe('null');
-    });
+    public function testShouldRepairUndefinedValues(): void
+    {
+        $this->assertSame('{"a":null}', jsonrepair('{"a":undefined}'));
+        $this->assertSame('[null]', jsonrepair('[undefined]'));
+        $this->assertSame('null', jsonrepair('undefined'));
+    }
 
-    test('should escape unescaped control characters', function () {
-        expect(jsonrepair("\"hello\bworld\""))->toBe('"hello\\bworld"');
-        expect(jsonrepair("\"hello\fworld\""))->toBe('"hello\\fworld"');
-        expect(jsonrepair("\"hello\nworld\""))->toBe('"hello\\nworld"');
-        expect(jsonrepair("\"hello\rworld\""))->toBe('"hello\\rworld"');
-        expect(jsonrepair("\"hello\tworld\""))->toBe('"hello\\tworld"');
-        expect(jsonrepair("{\"key\nafter\": \"foo\"}"))->toBe('{"key\\nafter": "foo"}');
-        expect(jsonrepair("[\"hello\nworld\"]"))->toBe('["hello\\nworld"]');
-        expect(jsonrepair("[\"hello\nworld\"  ]"))->toBe('["hello\\nworld"  ]');
-        expect(jsonrepair("[\"hello\nworld\"\n]"))->toBe("[\"hello\\nworld\"\n]");
-    });
+    public function testShouldEscapeUnescapedControlCharacters(): void
+    {
+        $this->assertSame('"hello\\bworld"', jsonrepair("\"hello\bworld\""));
+        $this->assertSame('"hello\\fworld"', jsonrepair("\"hello\fworld\""));
+        $this->assertSame('"hello\\nworld"', jsonrepair("\"hello\nworld\""));
+        $this->assertSame('"hello\\rworld"', jsonrepair("\"hello\rworld\""));
+        $this->assertSame('"hello\\tworld"', jsonrepair("\"hello\tworld\""));
+        $this->assertSame('{"key\\nafter": "foo"}', jsonrepair("{\"key\nafter\": \"foo\"}"));
+        $this->assertSame('["hello\\nworld"]', jsonrepair("[\"hello\nworld\"]"));
+        $this->assertSame('["hello\\nworld"  ]', jsonrepair("[\"hello\nworld\"  ]"));
+        $this->assertSame("[\"hello\\nworld\"\n]", jsonrepair("[\"hello\nworld\"\n]"));
+    }
 
-    test('should escape unescaped double quotes', function () {
-        expect(jsonrepair('"The TV has a 24" screen"'))->toBe('"The TV has a 24\\" screen"');
-        expect(jsonrepair('{"key": "apple "bee" carrot"}'))->toBe('{"key": "apple \\"bee\\" carrot"}');
-        expect(jsonrepair('[",",":"]'))->toBe('[",",":"]');
-        expect(jsonrepair('["a" 2]'))->toBe('["a", 2]');
-        expect(jsonrepair('["a" 2'))->toBe('["a", 2]');
-        expect(jsonrepair('["," 2'))->toBe('[",", 2]');
-    });
+    public function testShouldEscapeUnescapedDoubleQuotes(): void
+    {
+        $this->assertSame('"The TV has a 24\\" screen"', jsonrepair('"The TV has a 24" screen"'));
+        $this->assertSame('{"key": "apple \\"bee\\" carrot"}', jsonrepair('{"key": "apple "bee" carrot"}'));
+        $this->assertSame('[",",":"]', jsonrepair('[",",":"]'));
+        $this->assertSame('["a", 2]', jsonrepair('["a" 2]'));
+        $this->assertSame('["a", 2]', jsonrepair('["a" 2'));
+        $this->assertSame('[",", 2]', jsonrepair('["," 2'));
+    }
 
-    test('should replace special white space characters', function () {
-        expect(jsonrepair("{\"a\":\u{00A0}\"foo\u{00A0}bar\"}"))->toBe("{\"a\": \"foo\u{00A0}bar\"}");
-        expect(jsonrepair("{\"a\":\u{202F}\"foo\"}"))->toBe('{"a": "foo"}');
-        expect(jsonrepair("{\"a\":\u{205F}\"foo\"}"))->toBe('{"a": "foo"}');
-        expect(jsonrepair("{\"a\":\u{3000}\"foo\"}"))->toBe('{"a": "foo"}');
-    });
+    public function testShouldReplaceSpecialWhiteSpaceCharacters(): void
+    {
+        $this->assertSame("{\"a\": \"foo\u{00A0}bar\"}", jsonrepair("{\"a\":\u{00A0}\"foo\u{00A0}bar\"}"));
+        $this->assertSame('{"a": "foo"}', jsonrepair("{\"a\":\u{202F}\"foo\"}"));
+        $this->assertSame('{"a": "foo"}', jsonrepair("{\"a\":\u{205F}\"foo\"}"));
+        $this->assertSame('{"a": "foo"}', jsonrepair("{\"a\":\u{3000}\"foo\"}"));
+    }
 
-    test('should replace non normalized left/right quotes', function () {
-        expect(jsonrepair("\u{2018}foo\u{2019}"))->toBe('"foo"');
-        expect(jsonrepair("\u{201C}foo\u{201D}"))->toBe('"foo"');
-        expect(jsonrepair("\u{0060}foo\u{00B4}"))->toBe('"foo"');
-        expect(jsonrepair("\u{0060}foo'"))->toBe('"foo"');
-    });
+    public function testShouldReplaceNonNormalizedLeftRightQuotes(): void
+    {
+        $this->assertSame('"foo"', jsonrepair("\u{2018}foo\u{2019}"));
+        $this->assertSame('"foo"', jsonrepair("\u{201C}foo\u{201D}"));
+        $this->assertSame('"foo"', jsonrepair("\u{0060}foo\u{00B4}"));
+        $this->assertSame('"foo"', jsonrepair("\u{0060}foo'"));
+    }
 
-    test('should remove block comments', function () {
-        expect(jsonrepair('/* foo */ {}'))->toBe(' {}');
-        expect(jsonrepair('{} /* foo */ '))->toBe('{}  ');
-        expect(jsonrepair('{} /* foo '))->toBe('{} ');
-        expect(jsonrepair("\n/* foo */\n{}"))->toBe("\n\n{}");
-        expect(jsonrepair('{"a":"foo",/*hello*/"b":"bar"}'))->toBe('{"a":"foo","b":"bar"}');
-        expect(jsonrepair('{"flag":/*boolean*/true}'))->toBe('{"flag":true}');
-    });
+    public function testShouldRemoveBlockComments(): void
+    {
+        $this->assertSame(' {}', jsonrepair('/* foo */ {}'));
+        $this->assertSame('{}  ', jsonrepair('{} /* foo */ '));
+        $this->assertSame('{} ', jsonrepair('{} /* foo '));
+        $this->assertSame("\n\n{}", jsonrepair("\n/* foo */\n{}"));
+        $this->assertSame('{"a":"foo","b":"bar"}', jsonrepair('{"a":"foo",/*hello*/"b":"bar"}'));
+        $this->assertSame('{"flag":true}', jsonrepair('{"flag":/*boolean*/true}'));
+    }
 
-    test('should remove line comments', function () {
-        expect(jsonrepair('{} // comment'))->toBe('{} ');
-        expect(jsonrepair("{\n\"a\":\"foo\",//hello\n\"b\":\"bar\"\n}"))->toBe("{\n\"a\":\"foo\",\n\"b\":\"bar\"\n}");
-    });
+    public function testShouldRemoveLineComments(): void
+    {
+        $this->assertSame('{} ', jsonrepair('{} // comment'));
+        $this->assertSame("{\n\"a\":\"foo\",\n\"b\":\"bar\"\n}", jsonrepair("{\n\"a\":\"foo\",//hello\n\"b\":\"bar\"\n}"));
+    }
 
-    test('should not remove comments inside a string', function () {
-        expect(jsonrepair('"/* foo */"'))->toBe('"/* foo */"');
-    });
+    public function testShouldNotRemoveCommentsInsideAString(): void
+    {
+        $this->assertSame('"/* foo */"', jsonrepair('"/* foo */"'));
+    }
 
-    test('should remove comments after a string containing a delimiter', function () {
-        expect(jsonrepair('["a"/* foo */]'))->toBe('["a"]');
-        expect(jsonrepair('["(a)"/* foo */]'))->toBe('["(a)"]');
-        expect(jsonrepair('["a]"/* foo */]'))->toBe('["a]"]');
-        expect(jsonrepair('{"a":"b"/* foo */}'))->toBe('{"a":"b"}');
-        expect(jsonrepair('{"a":"(b)"/* foo */}'))->toBe('{"a":"(b)"}');
-    });
+    public function testShouldRemoveCommentsAfterAStringContainingADelimiter(): void
+    {
+        $this->assertSame('["a"]', jsonrepair('["a"/* foo */]'));
+        $this->assertSame('["(a)"]', jsonrepair('["(a)"/* foo */]'));
+        $this->assertSame('["a]"]', jsonrepair('["a]"/* foo */]'));
+        $this->assertSame('{"a":"b"}', jsonrepair('{"a":"b"/* foo */}'));
+        $this->assertSame('{"a":"(b)"}', jsonrepair('{"a":"(b)"/* foo */}'));
+    }
 
-    test('should strip JSONP notation', function () {
-        expect(jsonrepair('callback_123({});'))->toBe('{}');
-        expect(jsonrepair('callback_123([]);'))->toBe('[]');
-        expect(jsonrepair('callback_123(2);'))->toBe('2');
-        expect(jsonrepair('callback_123("foo");'))->toBe('"foo"');
-        expect(jsonrepair('callback_123(null);'))->toBe('null');
-        expect(jsonrepair('callback_123(true);'))->toBe('true');
-        expect(jsonrepair('callback_123(false);'))->toBe('false');
-        expect(jsonrepair('callback({}'))->toBe('{}');
-        expect(jsonrepair('/* foo bar */ callback_123 ({})'))->toBe(' {}');
-        expect(jsonrepair("/* foo bar */\ncallback_123({})"))->toBe("\n{}");
-        expect(jsonrepair('/* foo bar */ callback_123 (  {}  )'))->toBe('   {}  ');
-        expect(jsonrepair('  /* foo bar */   callback_123({});  '))->toBe('     {}  ');
-        expect(jsonrepair("\n/* foo\nbar */\ncallback_123 ({});\n\n"))->toBe("\n\n{}\n\n");
-    });
+    public function testShouldStripJsonpNotation(): void
+    {
+        $this->assertSame('{}', jsonrepair('callback_123({});'));
+        $this->assertSame('[]', jsonrepair('callback_123([]);'));
+        $this->assertSame('2', jsonrepair('callback_123(2);'));
+        $this->assertSame('"foo"', jsonrepair('callback_123("foo");'));
+        $this->assertSame('null', jsonrepair('callback_123(null);'));
+        $this->assertSame('true', jsonrepair('callback_123(true);'));
+        $this->assertSame('false', jsonrepair('callback_123(false);'));
+        $this->assertSame('{}', jsonrepair('callback({}'));
+        $this->assertSame(' {}', jsonrepair('/* foo bar */ callback_123 ({})'));
+        $this->assertSame("\n{}", jsonrepair("/* foo bar */\ncallback_123({})"));
+        $this->assertSame('   {}  ', jsonrepair('/* foo bar */ callback_123 (  {}  )'));
+        $this->assertSame('     {}  ', jsonrepair('  /* foo bar */   callback_123({});  '));
+        $this->assertSame("\n\n{}\n\n", jsonrepair("\n/* foo\nbar */\ncallback_123 ({});\n\n"));
+    }
 
-    test('should strip markdown fenced code blocks', function () {
-        expect(jsonrepair("```\n{\"a\":\"b\"}\n```"))->toBe("\n{\"a\":\"b\"}\n");
-        expect(jsonrepair("```json\n{\"a\":\"b\"}\n```"))->toBe("\n{\"a\":\"b\"}\n");
-        expect(jsonrepair("```\n{\"a\":\"b\"}\n"))->toBe("\n{\"a\":\"b\"}\n");
-        expect(jsonrepair("\n{\"a\":\"b\"}\n```"))->toBe("\n{\"a\":\"b\"}\n");
-        expect(jsonrepair('```{"a":"b"}```'))->toBe('{"a":"b"}');
-        expect(jsonrepair("```\n[1,2,3]\n```"))->toBe("\n[1,2,3]\n");
-        expect(jsonrepair("```python\n{\"a\":\"b\"}\n```"))->toBe("\n{\"a\":\"b\"}\n");
-        expect(jsonrepair("\n ```json\n{\"a\":\"b\"}\n```\n  "))->toBe("\n \n{\"a\":\"b\"}\n\n  ");
-    });
+    public function testShouldStripMarkdownFencedCodeBlocks(): void
+    {
+        $this->assertSame("\n{\"a\":\"b\"}\n", jsonrepair("```\n{\"a\":\"b\"}\n```"));
+        $this->assertSame("\n{\"a\":\"b\"}\n", jsonrepair("```json\n{\"a\":\"b\"}\n```"));
+        $this->assertSame("\n{\"a\":\"b\"}\n", jsonrepair("```\n{\"a\":\"b\"}\n"));
+        $this->assertSame("\n{\"a\":\"b\"}\n", jsonrepair("\n{\"a\":\"b\"}\n```"));
+        $this->assertSame('{"a":"b"}', jsonrepair('```{"a":"b"}```'));
+        $this->assertSame("\n[1,2,3]\n", jsonrepair("```\n[1,2,3]\n```"));
+        $this->assertSame("\n{\"a\":\"b\"}\n", jsonrepair("```python\n{\"a\":\"b\"}\n```"));
+        $this->assertSame("\n \n{\"a\":\"b\"}\n\n  ", jsonrepair("\n ```json\n{\"a\":\"b\"}\n```\n  "));
+    }
 
-    test('should strip invalid markdown fenced code blocks', function () {
-        expect(jsonrepair("[```\n{\"a\":\"b\"}\n```]"))->toBe("\n{\"a\":\"b\"}\n");
-        expect(jsonrepair("[```json\n{\"a\":\"b\"}\n```]"))->toBe("\n{\"a\":\"b\"}\n");
-        expect(jsonrepair("{```\n{\"a\":\"b\"}\n```}"))->toBe("\n{\"a\":\"b\"}\n");
-        expect(jsonrepair("{```json\n{\"a\":\"b\"}\n```}"))->toBe("\n{\"a\":\"b\"}\n");
-    });
+    public function testShouldStripInvalidMarkdownFencedCodeBlocks(): void
+    {
+        $this->assertSame("\n{\"a\":\"b\"}\n", jsonrepair("[```\n{\"a\":\"b\"}\n```]"));
+        $this->assertSame("\n{\"a\":\"b\"}\n", jsonrepair("[```json\n{\"a\":\"b\"}\n```]"));
+        $this->assertSame("\n{\"a\":\"b\"}\n", jsonrepair("{```\n{\"a\":\"b\"}\n```}"));
+        $this->assertSame("\n{\"a\":\"b\"}\n", jsonrepair("{```json\n{\"a\":\"b\"}\n```}"));
+    }
 
-    test('should repair escaped string contents', function () {
-        expect(jsonrepair('\\"hello world\\"'))->toBe('"hello world"');
-        expect(jsonrepair('\\"hello world\\'))->toBe('"hello world"');
-        expect(jsonrepair('\\"hello \\\\"world\\\\"\\"'))->toBe('"hello \\"world\\""');
-        expect(jsonrepair('[\\"hello \\\\"world\\\\"\\"]'))->toBe('["hello \\"world\\""]');
-        expect(jsonrepair('{\\"stringified\\": \\"hello \\\\"world\\\\"\\"}'  ))->toBe('{"stringified": "hello \\"world\\""}');
-        expect(jsonrepair('\\"hello"'))->toBe('"hello"');
-    });
+    public function testShouldRepairEscapedStringContents(): void
+    {
+        $this->assertSame('"hello world"', jsonrepair('\\"hello world\\"'));
+        $this->assertSame('"hello world"', jsonrepair('\\"hello world\\'));
+        $this->assertSame('"hello \\"world\\""', jsonrepair('\\"hello \\\\"world\\\\"\\"'));
+        $this->assertSame('["hello \\"world\\""]', jsonrepair('[\\"hello \\\\"world\\\\"\\"]'));
+        $this->assertSame('{"stringified": "hello \\"world\\""}', jsonrepair('{\\"stringified\\": \\"hello \\\\"world\\\\"\\"}'  ));
+        $this->assertSame('"hello"', jsonrepair('\\"hello"'));
+    }
 
-    test('should strip a leading comma from an array', function () {
-        expect(jsonrepair('[,1,2,3]'))->toBe('[1,2,3]');
-        expect(jsonrepair('[/* a */,/* b */1,2,3]'))->toBe('[1,2,3]');
-        expect(jsonrepair('[, 1,2,3]'))->toBe('[ 1,2,3]');
-        expect(jsonrepair('[ , 1,2,3]'))->toBe('[  1,2,3]');
-    });
+    public function testShouldStripALeadingCommaFromAnArray(): void
+    {
+        $this->assertSame('[1,2,3]', jsonrepair('[,1,2,3]'));
+        $this->assertSame('[1,2,3]', jsonrepair('[/* a */,/* b */1,2,3]'));
+        $this->assertSame('[ 1,2,3]', jsonrepair('[, 1,2,3]'));
+        $this->assertSame('[  1,2,3]', jsonrepair('[ , 1,2,3]'));
+    }
 
-    test('should strip a leading comma from an object', function () {
-        expect(jsonrepair('{,"message": "hi"}'))->toBe('{"message": "hi"}');
-        expect(jsonrepair('{/* a */,/* b */"message": "hi"}'))->toBe('{"message": "hi"}');
-        expect(jsonrepair('{ ,"message": "hi"}'))->toBe('{ "message": "hi"}');
-        expect(jsonrepair('{, "message": "hi"}'))->toBe('{ "message": "hi"}');
-    });
+    public function testShouldStripALeadingCommaFromAnObject(): void
+    {
+        $this->assertSame('{"message": "hi"}', jsonrepair('{,"message": "hi"}'));
+        $this->assertSame('{"message": "hi"}', jsonrepair('{/* a */,/* b */"message": "hi"}'));
+        $this->assertSame('{ "message": "hi"}', jsonrepair('{ ,"message": "hi"}'));
+        $this->assertSame('{ "message": "hi"}', jsonrepair('{, "message": "hi"}'));
+    }
 
-    test('should strip trailing commas from an array', function () {
-        expect(jsonrepair('[1,2,3,]'))->toBe('[1,2,3]');
-        expect(jsonrepair("[1,2,3,\n]"))->toBe("[1,2,3\n]");
-        expect(jsonrepair("[1,2,3,  \n  ]"))->toBe("[1,2,3  \n  ]");
-        expect(jsonrepair('[1,2,3,/*foo*/]'))->toBe('[1,2,3]');
-        expect(jsonrepair('{"array":[1,2,3,]}'))->toBe('{"array":[1,2,3]}');
-        expect(jsonrepair('"[1,2,3,]"'))->toBe('"[1,2,3,]"');
-    });
+    public function testShouldStripTrailingCommasFromAnArray(): void
+    {
+        $this->assertSame('[1,2,3]', jsonrepair('[1,2,3,]'));
+        $this->assertSame("[1,2,3\n]", jsonrepair("[1,2,3,\n]"));
+        $this->assertSame("[1,2,3  \n  ]", jsonrepair("[1,2,3,  \n  ]"));
+        $this->assertSame('[1,2,3]', jsonrepair('[1,2,3,/*foo*/]'));
+        $this->assertSame('{"array":[1,2,3]}', jsonrepair('{"array":[1,2,3,]}'));
+        $this->assertSame('"[1,2,3,]"', jsonrepair('"[1,2,3,]"'));
+    }
 
-    test('should strip trailing commas from an object', function () {
-        expect(jsonrepair('{"a":2,}'))->toBe('{"a":2}');
-        expect(jsonrepair('{"a":2  ,  }'))->toBe('{"a":2    }');
-        expect(jsonrepair("{\"a\":2  , \n }"))->toBe("{\"a\":2   \n }");
-        expect(jsonrepair('{"a":2/*foo*/,/*foo*/}'))->toBe('{"a":2}');
-        expect(jsonrepair('{},'))->toBe('{}');
-        expect(jsonrepair('"{a:2,}"'))->toBe('"{a:2,}"');
-    });
+    public function testShouldStripTrailingCommasFromAnObject(): void
+    {
+        $this->assertSame('{"a":2}', jsonrepair('{"a":2,}'));
+        $this->assertSame('{"a":2    }', jsonrepair('{"a":2  ,  }'));
+        $this->assertSame("{\"a\":2   \n }", jsonrepair("{\"a\":2  , \n }"));
+        $this->assertSame('{"a":2}', jsonrepair('{"a":2/*foo*/,/*foo*/}'));
+        $this->assertSame('{}', jsonrepair('{},'));
+        $this->assertSame('"{a:2,}"', jsonrepair('"{a:2,}"'));
+    }
 
-    test('should strip trailing comma at the end', function () {
-        expect(jsonrepair('4,'))->toBe('4');
-        expect(jsonrepair('4 ,'))->toBe('4 ');
-        expect(jsonrepair('4 , '))->toBe('4  ');
-        expect(jsonrepair('{"a":2},'))->toBe('{"a":2}');
-        expect(jsonrepair('[1,2,3],'))->toBe('[1,2,3]');
-    });
+    public function testShouldStripTrailingCommaAtTheEnd(): void
+    {
+        $this->assertSame('4', jsonrepair('4,'));
+        $this->assertSame('4 ', jsonrepair('4 ,'));
+        $this->assertSame('4  ', jsonrepair('4 , '));
+        $this->assertSame('{"a":2}', jsonrepair('{"a":2},'));
+        $this->assertSame('[1,2,3]', jsonrepair('[1,2,3],'));
+    }
 
-    test('should add a missing closing brace for an object', function () {
-        expect(jsonrepair('{'))->toBe('{}');
-        expect(jsonrepair('{"a":2'))->toBe('{"a":2}');
-        expect(jsonrepair('{"a":2,'))->toBe('{"a":2}');
-        expect(jsonrepair('{"a":{"b":2}'))->toBe('{"a":{"b":2}}');
-        expect(jsonrepair("{\n  \"a\":{\"b\":2\n}"))->toBe("{\n  \"a\":{\"b\":2\n}}");
-        expect(jsonrepair('[{"b":2]'))->toBe('[{"b":2}]');
-        expect(jsonrepair("[{\"b\":2\n]"))->toBe("[{\"b\":2}\n]");
-        expect(jsonrepair('[{"i":1{"i":2}]'))->toBe('[{"i":1},{"i":2}]');
-        expect(jsonrepair('[{"i":1,{"i":2}]'))->toBe('[{"i":1},{"i":2}]');
-    });
+    public function testShouldAddAMissingClosingBraceForAnObject(): void
+    {
+        $this->assertSame('{}', jsonrepair('{'));
+        $this->assertSame('{"a":2}', jsonrepair('{"a":2'));
+        $this->assertSame('{"a":2}', jsonrepair('{"a":2,'));
+        $this->assertSame('{"a":{"b":2}}', jsonrepair('{"a":{"b":2}'));
+        $this->assertSame("{\n  \"a\":{\"b\":2\n}}", jsonrepair("{\n  \"a\":{\"b\":2\n}"));
+        $this->assertSame('[{"b":2}]', jsonrepair('[{"b":2]'));
+        $this->assertSame("[{\"b\":2}\n]", jsonrepair("[{\"b\":2\n]"));
+        $this->assertSame('[{"i":1},{"i":2}]', jsonrepair('[{"i":1{"i":2}]'));
+        $this->assertSame('[{"i":1},{"i":2}]', jsonrepair('[{"i":1,{"i":2}]'));
+    }
 
-    test('should remove a redundant closing bracket for an object', function () {
-        expect(jsonrepair('{"a": 1}}'))->toBe('{"a": 1}');
-        expect(jsonrepair('{"a": 1}}]}'))->toBe('{"a": 1}');
-        expect(jsonrepair('{"a": 1 }  }  ]  }  '))->toBe('{"a": 1 }        ');
-        expect(jsonrepair('{"a":2]'))->toBe('{"a":2}');
-        expect(jsonrepair('{"a":2,]'))->toBe('{"a":2}');
-        expect(jsonrepair('{}}}'))->toBe('{}');
-        expect(jsonrepair('[2,}'))->toBe('[2]');
-        expect(jsonrepair('[}'))->toBe('[]');
-        expect(jsonrepair('{]'))->toBe('{}');
-    });
+    public function testShouldRemoveARedundantClosingBracketForAnObject(): void
+    {
+        $this->assertSame('{"a": 1}', jsonrepair('{"a": 1}}'));
+        $this->assertSame('{"a": 1}', jsonrepair('{"a": 1}}]}'));
+        $this->assertSame('{"a": 1 }        ', jsonrepair('{"a": 1 }  }  ]  }  '));
+        $this->assertSame('{"a":2}', jsonrepair('{"a":2]'));
+        $this->assertSame('{"a":2}', jsonrepair('{"a":2,]'));
+        $this->assertSame('{}', jsonrepair('{}}}'));
+        $this->assertSame('[2]', jsonrepair('[2,}'));
+        $this->assertSame('[]', jsonrepair('[}'));
+        $this->assertSame('{}', jsonrepair('{]'));
+    }
 
-    test('should add a missing closing bracket for an array', function () {
-        expect(jsonrepair('['))->toBe('[]');
-        expect(jsonrepair('[1,2,3'))->toBe('[1,2,3]');
-        expect(jsonrepair('[1,2,3,'))->toBe('[1,2,3]');
-        expect(jsonrepair('[[1,2,3,'))->toBe('[[1,2,3]]');
-        expect(jsonrepair("{\n\"values\":[1,2,3\n}"))->toBe("{\n\"values\":[1,2,3]\n}");
-        expect(jsonrepair("{\n\"values\":[1,2,3\n"))->toBe("{\n\"values\":[1,2,3]}\n");
-    });
+    public function testShouldAddAMissingClosingBracketForAnArray(): void
+    {
+        $this->assertSame('[]', jsonrepair('['));
+        $this->assertSame('[1,2,3]', jsonrepair('[1,2,3'));
+        $this->assertSame('[1,2,3]', jsonrepair('[1,2,3,'));
+        $this->assertSame('[[1,2,3]]', jsonrepair('[[1,2,3,'));
+        $this->assertSame("{\n\"values\":[1,2,3]\n}", jsonrepair("{\n\"values\":[1,2,3\n}"));
+        $this->assertSame("{\n\"values\":[1,2,3]}\n", jsonrepair("{\n\"values\":[1,2,3\n"));
+    }
 
-    test('should strip MongoDB data types', function () {
-        expect(jsonrepair('NumberLong("2")'))->toBe('"2"');
-        expect(jsonrepair('{"_id":ObjectId("123")}'))->toBe('{"_id":"123"}');
+    public function testShouldStripMongodbDataTypes(): void
+    {
+        $this->assertSame('"2"', jsonrepair('NumberLong("2")'));
+        $this->assertSame('{"_id":"123"}', jsonrepair('{"_id":ObjectId("123")}'));
 
         $mongoDocument = "{\n" .
             "   \"_id\" : ObjectId(\"123\"),\n" .
@@ -483,150 +534,208 @@ describe('repair invalid JSON', function () {
             "   \"decimal2\" : 4\n" .
             "}";
 
-        expect(jsonrepair($mongoDocument))->toBe($expectedJson);
-    });
+        $this->assertSame($expectedJson, jsonrepair($mongoDocument));
+    }
 
-    test('should parse an unquoted string', function () {
-        expect(jsonrepair('hello world'))->toBe('"hello world"');
-        expect(jsonrepair('She said: no way'))->toBe('"She said: no way"');
-        expect(jsonrepair('["This is C(2)", "This is F(3)]'))->toBe('["This is C(2)", "This is F(3)"]');
-        expect(jsonrepair('["This is C(2)", This is F(3)]'))->toBe('["This is C(2)", "This is F(3)"]');
-    });
+    public function testShouldParseAnUnquotedString(): void
+    {
+        $this->assertSame('"hello world"', jsonrepair('hello world'));
+        $this->assertSame('"She said: no way"', jsonrepair('She said: no way'));
+        $this->assertSame('["This is C(2)", "This is F(3)"]', jsonrepair('["This is C(2)", "This is F(3)]'));
+        $this->assertSame('["This is C(2)", "This is F(3)"]', jsonrepair('["This is C(2)", This is F(3)]'));
+    }
 
-    test('should replace Python constants None, True, False', function () {
-        expect(jsonrepair('True'))->toBe('true');
-        expect(jsonrepair('False'))->toBe('false');
-        expect(jsonrepair('None'))->toBe('null');
-    });
+    public function testShouldReplacePythonConstantsNoneTrueFalse(): void
+    {
+        $this->assertSame('true', jsonrepair('True'));
+        $this->assertSame('false', jsonrepair('False'));
+        $this->assertSame('null', jsonrepair('None'));
+    }
 
-    test('should turn unknown symbols into a string', function () {
-        expect(jsonrepair('foo'))->toBe('"foo"');
-        expect(jsonrepair('[1,foo,4]'))->toBe('[1,"foo",4]');
-        expect(jsonrepair('{foo: bar}'))->toBe('{"foo": "bar"}');
-        expect(jsonrepair('foo 2 bar'))->toBe('"foo 2 bar"');
-        expect(jsonrepair('{greeting: hello world}'))->toBe('{"greeting": "hello world"}');
-        expect(jsonrepair("{greeting: hello world\nnext: \"line\"}"))->toBe("{\"greeting\": \"hello world\",\n\"next\": \"line\"}");
-        expect(jsonrepair('{greeting: hello world!}'))->toBe('{"greeting": "hello world!"}');
-    });
+    public function testShouldTurnUnknownSymbolsIntoAString(): void
+    {
+        $this->assertSame('"foo"', jsonrepair('foo'));
+        $this->assertSame('[1,"foo",4]', jsonrepair('[1,foo,4]'));
+        $this->assertSame('{"foo": "bar"}', jsonrepair('{foo: bar}'));
+        $this->assertSame('"foo 2 bar"', jsonrepair('foo 2 bar'));
+        $this->assertSame('{"greeting": "hello world"}', jsonrepair('{greeting: hello world}'));
+        $this->assertSame("{\"greeting\": \"hello world\",\n\"next\": \"line\"}", jsonrepair("{greeting: hello world\nnext: \"line\"}"));
+        $this->assertSame('{"greeting": "hello world!"}', jsonrepair('{greeting: hello world!}'));
+    }
 
-    test('should turn invalid numbers into strings', function () {
-        expect(jsonrepair('ES2020'))->toBe('"ES2020"');
-        expect(jsonrepair('0.0.1'))->toBe('"0.0.1"');
-        expect(jsonrepair('746de9ad-d4ff-4c66-97d7-00a92ad46967'))->toBe('"746de9ad-d4ff-4c66-97d7-00a92ad46967"');
-        expect(jsonrepair('234..5'))->toBe('"234..5"');
-        expect(jsonrepair('[0.0.1,2]'))->toBe('["0.0.1",2]');
-        expect(jsonrepair('[2 0.0.1 2]'))->toBe('[2, "0.0.1 2"]');
-        expect(jsonrepair('2e3.4'))->toBe('"2e3.4"');
-    });
+    public function testShouldTurnInvalidNumbersIntoStrings(): void
+    {
+        $this->assertSame('"ES2020"', jsonrepair('ES2020'));
+        $this->assertSame('"0.0.1"', jsonrepair('0.0.1'));
+        $this->assertSame('"746de9ad-d4ff-4c66-97d7-00a92ad46967"', jsonrepair('746de9ad-d4ff-4c66-97d7-00a92ad46967'));
+        $this->assertSame('"234..5"', jsonrepair('234..5'));
+        $this->assertSame('["0.0.1",2]', jsonrepair('[0.0.1,2]'));
+        $this->assertSame('[2, "0.0.1 2"]', jsonrepair('[2 0.0.1 2]'));
+        $this->assertSame('"2e3.4"', jsonrepair('2e3.4'));
+    }
 
-    test('should repair regular expressions', function () {
-        expect(jsonrepair('{regex: /standalone-styles.css/}'))->toBe('{"regex": "/standalone-styles.css/"}');
-        expect(jsonrepair('{regex: /with escape char \\/ [a-z]_/}'))->toBe('{"regex": "/with escape char \\/ [a-z]_/"}');
-    });
+    public function testShouldRepairRegularExpressions(): void
+    {
+        $this->assertSame('{"regex": "/standalone-styles.css/"}', jsonrepair('{regex: /standalone-styles.css/}'));
+        $this->assertSame('{"regex": "/with escape char \\/ [a-z]_/"}', jsonrepair('{regex: /with escape char \\/ [a-z]_/}'));
+    }
 
-    test('should concatenate strings', function () {
-        expect(jsonrepair('"hello" + " world"'))->toBe('"hello world"');
-        expect(jsonrepair("\"hello\" +\n \" world\""))->toBe('"hello world"');
-        expect(jsonrepair('"a"+"b"+"c"'))->toBe('"abc"');
-        expect(jsonrepair('"hello" + /*comment*/ " world"'))->toBe('"hello world"');
-        expect(jsonrepair("{\n  \"greeting\": 'hello' +\n 'world'\n}"))->toBe("{\n  \"greeting\": \"helloworld\"\n}");
-        expect(jsonrepair("\"hello +\n \" world\""))->toBe('"hello world"');
-        expect(jsonrepair('"hello +'))->toBe('"hello"');
-        expect(jsonrepair('["hello +]'))->toBe('["hello"]');
-    });
+    public function testShouldConcatenateStrings(): void
+    {
+        $this->assertSame('"hello world"', jsonrepair('"hello" + " world"'));
+        $this->assertSame('"hello world"', jsonrepair("\"hello\" +\n \" world\""));
+        $this->assertSame('"abc"', jsonrepair('"a"+"b"+"c"'));
+        $this->assertSame('"hello world"', jsonrepair('"hello" + /*comment*/ " world"'));
+        $this->assertSame("{\n  \"greeting\": \"helloworld\"\n}", jsonrepair("{\n  \"greeting\": 'hello' +\n 'world'\n}"));
+        $this->assertSame('"hello world"', jsonrepair("\"hello +\n \" world\""));
+        $this->assertSame('"hello"', jsonrepair('"hello +'));
+        $this->assertSame('["hello"]', jsonrepair('["hello +]'));
+    }
 
-    test('should repair missing comma between array items', function () {
-        expect(jsonrepair('{"array": [{}{}]}'))->toBe('{"array": [{},{}]}');
-        expect(jsonrepair("{\"array\": [{}\n{}]}"))->toBe("{\"array\": [{},\n{}]}");
-        expect(jsonrepair("{\"array\": [\n{}\n{}\n]}"))->toBe("{\"array\": [\n{},\n{}\n]}");
-        expect(jsonrepair("{\"array\": [\n1\n2\n]}"))->toBe("{\"array\": [\n1,\n2\n]}");
-        expect(jsonrepair("{\"array\": [\n\"a\"\n\"b\"\n]}"))->toBe("{\"array\": [\n\"a\",\n\"b\"\n]}");
-        expect(jsonrepair("[\n{},\n{}\n]"))->toBe("[\n{},\n{}\n]");
-    });
+    public function testShouldRepairMissingCommaBetweenArrayItems(): void
+    {
+        $this->assertSame('{"array": [{},{}]}', jsonrepair('{"array": [{}{}]}'));
+        $this->assertSame("{\"array\": [{},\n{}]}", jsonrepair("{\"array\": [{}\n{}]}"));
+        $this->assertSame("{\"array\": [\n{},\n{}\n]}", jsonrepair("{\"array\": [\n{}\n{}\n]}"));
+        $this->assertSame("{\"array\": [\n1,\n2\n]}", jsonrepair("{\"array\": [\n1\n2\n]}"));
+        $this->assertSame("{\"array\": [\n\"a\",\n\"b\"\n]}", jsonrepair("{\"array\": [\n\"a\"\n\"b\"\n]}"));
+        $this->assertSame("[\n{},\n{}\n]", jsonrepair("[\n{},\n{}\n]"));
+    }
 
-    test('should repair missing comma between object properties', function () {
-        expect(jsonrepair("{\"a\":2\n\"b\":3\n}"))->toBe("{\"a\":2,\n\"b\":3\n}");
-        expect(jsonrepair("{\"a\":2\n\"b\":3\nc:4}"))->toBe("{\"a\":2,\n\"b\":3,\n\"c\":4}");
-        expect(jsonrepair("{\n  \"firstName\": \"John\"\n  lastName: Smith"))->toBe("{\n  \"firstName\": \"John\",\n  \"lastName\": \"Smith\"}");
-        expect(jsonrepair("{\n  \"firstName\": \"John\" /* comment */ \n  lastName: Smith"))->toBe("{\n  \"firstName\": \"John\",  \n  \"lastName\": \"Smith\"}");
-        expect(jsonrepair("{\n  \"firstName\": \"John\"\n  ,  lastName: Smith"))->toBe("{\n  \"firstName\": \"John\"\n  ,  \"lastName\": \"Smith\"}");
-    });
+    public function testShouldRepairMissingCommaBetweenObjectProperties(): void
+    {
+        $this->assertSame("{\"a\":2,\n\"b\":3\n}", jsonrepair("{\"a\":2\n\"b\":3\n}"));
+        $this->assertSame("{\"a\":2,\n\"b\":3,\n\"c\":4}", jsonrepair("{\"a\":2\n\"b\":3\nc:4}"));
+        $this->assertSame("{\n  \"firstName\": \"John\",\n  \"lastName\": \"Smith\"}", jsonrepair("{\n  \"firstName\": \"John\"\n  lastName: Smith"));
+        $this->assertSame("{\n  \"firstName\": \"John\",  \n  \"lastName\": \"Smith\"}", jsonrepair("{\n  \"firstName\": \"John\" /* comment */ \n  lastName: Smith"));
+        $this->assertSame("{\n  \"firstName\": \"John\"\n  ,  \"lastName\": \"Smith\"}", jsonrepair("{\n  \"firstName\": \"John\"\n  ,  lastName: Smith"));
+    }
 
-    test('should repair numbers at the end', function () {
-        expect(jsonrepair('{"a":2.'))->toBe('{"a":2.0}');
-        expect(jsonrepair('{"a":2e'))->toBe('{"a":2e0}');
-        expect(jsonrepair('{"a":2e-'))->toBe('{"a":2e-0}');
-        expect(jsonrepair('{"a":-'))->toBe('{"a":-0}');
-        expect(jsonrepair('[2e,'))->toBe('[2e0]');
-        expect(jsonrepair('[2e '))->toBe('[2e0] ');
-        expect(jsonrepair('[-,'))->toBe('[-0]');
-    });
+    public function testShouldRepairNumbersAtTheEnd(): void
+    {
+        $this->assertSame('{"a":2.0}', jsonrepair('{"a":2.'));
+        $this->assertSame('{"a":2e0}', jsonrepair('{"a":2e'));
+        $this->assertSame('{"a":2e-0}', jsonrepair('{"a":2e-'));
+        $this->assertSame('{"a":-0}', jsonrepair('{"a":-'));
+        $this->assertSame('[2e0]', jsonrepair('[2e,'));
+        $this->assertSame('[2e0] ', jsonrepair('[2e '));
+        $this->assertSame('[-0]', jsonrepair('[-,'));
+    }
 
-    test('should repair missing colon between object key and value', function () {
-        expect(jsonrepair('{"a" "b"}'))->toBe('{"a": "b"}');
-        expect(jsonrepair('{"a" 2}'))->toBe('{"a": 2}');
-        expect(jsonrepair('{"a" true}'))->toBe('{"a": true}');
-        expect(jsonrepair('{"a" false}'))->toBe('{"a": false}');
-        expect(jsonrepair('{"a" null}'))->toBe('{"a": null}');
-        expect(jsonrepair('{"a"2}'))->toBe('{"a":2}');
-        expect(jsonrepair("{\n\"a\" \"b\"\n}"))->toBe("{\n\"a\": \"b\"\n}");
-        expect(jsonrepair('{"a" \'b\'}'))->toBe('{"a": "b"}');
-        expect(jsonrepair("{'a' 'b'}"))->toBe('{"a": "b"}');
-        expect(jsonrepair('{"a" "b"}'))->toBe('{"a": "b"}');
-        expect(jsonrepair("{a 'b'}"))->toBe('{"a": "b"}');
-        expect(jsonrepair('{a "b"}'))->toBe('{"a": "b"}');
-    });
+    public function testShouldRepairMissingColonBetweenObjectKeyAndValue(): void
+    {
+        $this->assertSame('{"a": "b"}', jsonrepair('{"a" "b"}'));
+        $this->assertSame('{"a": 2}', jsonrepair('{"a" 2}'));
+        $this->assertSame('{"a": true}', jsonrepair('{"a" true}'));
+        $this->assertSame('{"a": false}', jsonrepair('{"a" false}'));
+        $this->assertSame('{"a": null}', jsonrepair('{"a" null}'));
+        $this->assertSame('{"a":2}', jsonrepair('{"a"2}'));
+        $this->assertSame("{\n\"a\": \"b\"\n}", jsonrepair("{\n\"a\" \"b\"\n}"));
+        $this->assertSame('{"a": "b"}', jsonrepair('{"a" \'b\'}'));
+        $this->assertSame('{"a": "b"}', jsonrepair("{'a' 'b'}"));
+        $this->assertSame('{"a": "b"}', jsonrepair('{"a" "b"}'));
+        $this->assertSame('{"a": "b"}', jsonrepair("{a 'b'}"));
+        $this->assertSame('{"a": "b"}', jsonrepair('{a "b"}'));
+    }
 
-    test('should repair missing a combination of comma, quotes and brackets', function () {
-        expect(jsonrepair("{\"array\": [\na\nb\n]}"))->toBe("{\"array\": [\n\"a\",\n\"b\"\n]}");
-        expect(jsonrepair("1\n2"))->toBe("[\n1,\n2\n]");
-        expect(jsonrepair("[a,b\nc]"))->toBe("[\"a\",\"b\",\n\"c\"]");
-    });
+    public function testShouldRepairMissingACombinationOfCommaQuotesAndBrackets(): void
+    {
+        $this->assertSame("{\"array\": [\n\"a\",\n\"b\"\n]}", jsonrepair("{\"array\": [\na\nb\n]}"));
+        $this->assertSame("[\n1,\n2\n]", jsonrepair("1\n2"));
+        $this->assertSame("[\"a\",\"b\",\n\"c\"]", jsonrepair("[a,b\nc]"));
+    }
 
-    test('should repair newline separated json (for example from MongoDB)', function () {
+    public function testShouldRepairNewlineSeparatedJsonForExampleFromMongodb(): void
+    {
         $text = "/* 1 */\n{}\n\n/* 2 */\n{}\n\n/* 3 */\n{}\n";
         $expected = "[\n\n{},\n\n\n{},\n\n\n{}\n\n]";
-        expect(jsonrepair($text))->toBe($expected);
-    });
+        $this->assertSame($expected, jsonrepair($text));
+    }
 
-    test('should repair newline separated json having commas', function () {
+    public function testShouldRepairNewlineSeparatedJsonHavingCommas(): void
+    {
         $text = "/* 1 */\n{},\n\n/* 2 */\n{},\n\n/* 3 */\n{}\n";
         $expected = "[\n\n{},\n\n\n{},\n\n\n{}\n\n]";
-        expect(jsonrepair($text))->toBe($expected);
-    });
+        $this->assertSame($expected, jsonrepair($text));
+    }
 
-    test('should repair newline separated json having commas and trailing comma', function () {
+    public function testShouldRepairNewlineSeparatedJsonHavingCommasAndTrailingComma(): void
+    {
         $text = "/* 1 */\n{},\n\n/* 2 */\n{},\n\n/* 3 */\n{},\n";
         $expected = "[\n\n{},\n\n\n{},\n\n\n{}\n\n]";
-        expect(jsonrepair($text))->toBe($expected);
-    });
+        $this->assertSame($expected, jsonrepair($text));
+    }
 
-    test('should repair a comma separated list with value', function () {
-        expect(jsonrepair('1,2,3'))->toBe("[\n1,2,3\n]");
-        expect(jsonrepair('1,2,3,'))->toBe("[\n1,2,3\n]");
-        expect(jsonrepair("1\n2\n3"))->toBe("[\n1,\n2,\n3\n]");
-        expect(jsonrepair("a\nb"))->toBe("[\n\"a\",\n\"b\"\n]");
-        expect(jsonrepair('a,b'))->toBe("[\n\"a\",\"b\"\n]");
-    });
+    public function testShouldRepairACommaSeparatedListWithValue(): void
+    {
+        $this->assertSame("[\n1,2,3\n]", jsonrepair('1,2,3'));
+        $this->assertSame("[\n1,2,3\n]", jsonrepair('1,2,3,'));
+        $this->assertSame("[\n1,\n2,\n3\n]", jsonrepair("1\n2\n3"));
+        $this->assertSame("[\n\"a\",\n\"b\"\n]", jsonrepair("a\nb"));
+        $this->assertSame("[\n\"a\",\"b\"\n]", jsonrepair('a,b'));
+    }
 
-    test('should repair a number with leading zero', function () {
-        expect(jsonrepair('0789'))->toBe('"0789"');
-        expect(jsonrepair('000789'))->toBe('"000789"');
-        expect(jsonrepair('001.2'))->toBe('"001.2"');
-        expect(jsonrepair('002e3'))->toBe('"002e3"');
-        expect(jsonrepair('[0789]'))->toBe('["0789"]');
-        expect(jsonrepair('{value:0789}'))->toBe('{"value":"0789"}');
-    });
-});
+    public function testShouldRepairANumberWithLeadingZero(): void
+    {
+        $this->assertSame('"0789"', jsonrepair('0789'));
+        $this->assertSame('"000789"', jsonrepair('000789'));
+        $this->assertSame('"001.2"', jsonrepair('001.2'));
+        $this->assertSame('"002e3"', jsonrepair('002e3'));
+        $this->assertSame('["0789"]', jsonrepair('[0789]'));
+        $this->assertSame('{"value":"0789"}', jsonrepair('{value:0789}'));
+    }
 
-test('should throw an exception in case of non-repairable issues', function () {
-    expect(fn() => jsonrepair(''))->toThrow(JSONRepairError::class);
-    expect(fn() => jsonrepair('{"a",'))->toThrow(JSONRepairError::class);
-    expect(fn() => jsonrepair('{:2}'))->toThrow(JSONRepairError::class);
-    expect(fn() => jsonrepair('{"a":2}{}'))->toThrow(JSONRepairError::class);
-    expect(fn() => jsonrepair('{"a" ]'))->toThrow(JSONRepairError::class);
-    expect(fn() => jsonrepair('{"a":2}foo'))->toThrow(JSONRepairError::class);
-    expect(fn() => jsonrepair('foo ['))->toThrow(JSONRepairError::class);
-    expect(fn() => jsonrepair('"\\u26"'))->toThrow(JSONRepairError::class);
-    expect(fn() => jsonrepair('"\\uZ000"'))->toThrow(JSONRepairError::class);
-});
+    public function testShouldThrowAnExceptionInCaseOfNonRepairableIssues(): void
+    {
+        $this->expectException(JSONRepairError::class);
+        jsonrepair('');
+    }
+
+    public function testShouldThrowAnExceptionForInvalidComma(): void
+    {
+        $this->expectException(JSONRepairError::class);
+        jsonrepair('{"a",');
+    }
+
+    public function testShouldThrowAnExceptionForMissingKey(): void
+    {
+        $this->expectException(JSONRepairError::class);
+        jsonrepair('{:2}');
+    }
+
+    public function testShouldThrowAnExceptionForMultipleRootValues(): void
+    {
+        $this->expectException(JSONRepairError::class);
+        jsonrepair('{"a":2}{}');
+    }
+
+    public function testShouldThrowAnExceptionForMismatchedBrackets(): void
+    {
+        $this->expectException(JSONRepairError::class);
+        jsonrepair('{"a" ]');
+    }
+
+    public function testShouldThrowAnExceptionForTrailingText(): void
+    {
+        $this->expectException(JSONRepairError::class);
+        jsonrepair('{"a":2}foo');
+    }
+
+    public function testShouldThrowAnExceptionForInvalidTextBeforeArray(): void
+    {
+        $this->expectException(JSONRepairError::class);
+        jsonrepair('foo [');
+    }
+
+    public function testShouldThrowAnExceptionForInvalidUnicodeEscape(): void
+    {
+        $this->expectException(JSONRepairError::class);
+        jsonrepair('"\\u26"');
+    }
+
+    public function testShouldThrowAnExceptionForInvalidUnicodeCharacter(): void
+    {
+        $this->expectException(JSONRepairError::class);
+        jsonrepair('"\\uZ000"');
+    }
+}

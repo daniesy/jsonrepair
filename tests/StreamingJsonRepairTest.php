@@ -1,11 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
+use JsonRepair\Streaming\StreamingJsonRepair;
+use JsonRepair\Utils\JSONRepairError;
+use PHPUnit\Framework\TestCase;
 use function JsonRepair\jsonrepairStream;
 use function JsonRepair\jsonrepairStreamToString;
-use JsonRepair\Streaming\StreamingJsonRepair;
 
-describe('Streaming JSON Repair', function () {
-    test('should repair JSON from a stream', function () {
+final class StreamingJsonRepairTest extends TestCase
+{
+    public function testShouldRepairJsonFromAStream(): void
+    {
         $stream = fopen('php://memory', 'r+');
         fwrite($stream, "{name: 'John'}");
         rewind($stream);
@@ -13,10 +19,11 @@ describe('Streaming JSON Repair', function () {
         $result = jsonrepairStreamToString($stream);
         fclose($stream);
 
-        expect($result)->toBe('{"name": "John"}');
-    });
+        $this->assertSame('{"name": "John"}', $result);
+    }
 
-    test('should repair JSON from array of chunks', function () {
+    public function testShouldRepairJsonFromArrayOfChunks(): void
+    {
         $chunks = ["{name: ", "'John'}"];
 
         $result = '';
@@ -24,10 +31,11 @@ describe('Streaming JSON Repair', function () {
             $result .= $chunk;
         }
 
-        expect($result)->toBe('{"name": "John"}');
-    });
+        $this->assertSame('{"name": "John"}', $result);
+    }
 
-    test('should handle newline-delimited JSON', function () {
+    public function testShouldHandleNewlineDelimitedJson(): void
+    {
         $stream = fopen('php://memory', 'r+');
         fwrite($stream, "{\"a\":1}\n{\"b\":2}\n{\"c\":3}");
         rewind($stream);
@@ -35,10 +43,11 @@ describe('Streaming JSON Repair', function () {
         $result = jsonrepairStreamToString($stream);
         fclose($stream);
 
-        expect($result)->toBe('{"a":1}{"b":2}{"c":3}');
-    });
+        $this->assertSame('{"a":1}{"b":2}{"c":3}', $result);
+    }
 
-    test('should handle arrays split across chunks', function () {
+    public function testShouldHandleArraysSplitAcrossChunks(): void
+    {
         $chunks = ['[1, ', '2, ', '3]'];
 
         $result = '';
@@ -46,10 +55,11 @@ describe('Streaming JSON Repair', function () {
             $result .= $chunk;
         }
 
-        expect($result)->toBe('[1, 2, 3]');
-    });
+        $this->assertSame('[1, 2, 3]', $result);
+    }
 
-    test('should handle objects split across chunks', function () {
+    public function testShouldHandleObjectsSplitAcrossChunks(): void
+    {
         $chunks = ['{\"a\":', '1, \"b\":', '2}'];
 
         $result = '';
@@ -57,10 +67,11 @@ describe('Streaming JSON Repair', function () {
             $result .= $chunk;
         }
 
-        expect($result)->toBe('{"a":1, "b":2}');
-    });
+        $this->assertSame('{"a":1, "b":2}', $result);
+    }
 
-    test('should repair missing quotes in stream', function () {
+    public function testShouldRepairMissingQuotesInStream(): void
+    {
         $stream = fopen('php://memory', 'r+');
         fwrite($stream, "{name: John, age: 30}");
         rewind($stream);
@@ -68,10 +79,11 @@ describe('Streaming JSON Repair', function () {
         $result = jsonrepairStreamToString($stream);
         fclose($stream);
 
-        expect($result)->toBe('{"name": "John", "age": 30}');
-    });
+        $this->assertSame('{"name": "John", "age": 30}', $result);
+    }
 
-    test('should handle trailing commas in stream', function () {
+    public function testShouldHandleTrailingCommasInStream(): void
+    {
         $stream = fopen('php://memory', 'r+');
         fwrite($stream, "[1, 2, 3,]");
         rewind($stream);
@@ -79,10 +91,11 @@ describe('Streaming JSON Repair', function () {
         $result = jsonrepairStreamToString($stream);
         fclose($stream);
 
-        expect($result)->toBe('[1, 2, 3]');
-    });
+        $this->assertSame('[1, 2, 3]', $result);
+    }
 
-    test('should handle single quotes in stream', function () {
+    public function testShouldHandleSingleQuotesInStream(): void
+    {
         $stream = fopen('php://memory', 'r+');
         fwrite($stream, "{'a': 'b'}");
         rewind($stream);
@@ -90,10 +103,11 @@ describe('Streaming JSON Repair', function () {
         $result = jsonrepairStreamToString($stream);
         fclose($stream);
 
-        expect($result)->toBe('{"a": "b"}');
-    });
+        $this->assertSame('{"a": "b"}', $result);
+    }
 
-    test('should handle comments in stream', function () {
+    public function testShouldHandleCommentsInStream(): void
+    {
         $stream = fopen('php://memory', 'r+');
         fwrite($stream, "{/* comment */\"a\": 1}");
         rewind($stream);
@@ -101,10 +115,11 @@ describe('Streaming JSON Repair', function () {
         $result = jsonrepairStreamToString($stream);
         fclose($stream);
 
-        expect($result)->toBe('{"a": 1}');
-    });
+        $this->assertSame('{"a": 1}', $result);
+    }
 
-    test('should yield multiple chunks when processing', function () {
+    public function testShouldYieldMultipleChunksWhenProcessing(): void
+    {
         $chunks = [
             '{"a": 1}',
             '{"b": 2}',
@@ -116,11 +131,12 @@ describe('Streaming JSON Repair', function () {
             $results[] = $chunk;
         }
 
-        expect(count($results))->toBeGreaterThanOrEqual(1);
-        expect(implode('', $results))->toBe('{"a": 1}{"b": 2}{"c": 3}');
-    });
+        $this->assertGreaterThanOrEqual(1, count($results));
+        $this->assertSame('{"a": 1}{"b": 2}{"c": 3}', implode('', $results));
+    }
 
-    test('should handle incomplete JSON at end of stream', function () {
+    public function testShouldHandleIncompleteJsonAtEndOfStream(): void
+    {
         $stream = fopen('php://memory', 'r+');
         fwrite($stream, '{"a": 1, "b": 2');
         rewind($stream);
@@ -128,10 +144,11 @@ describe('Streaming JSON Repair', function () {
         $result = jsonrepairStreamToString($stream);
         fclose($stream);
 
-        expect($result)->toBe('{"a": 1, "b": 2}');
-    });
+        $this->assertSame('{"a": 1, "b": 2}', $result);
+    }
 
-    test('should handle large JSON documents', function () {
+    public function testShouldHandleLargeJsonDocuments(): void
+    {
         $largeArray = array_fill(0, 1000, ['id' => 1, 'name' => 'test']);
         $json = json_encode($largeArray);
 
@@ -143,10 +160,11 @@ describe('Streaming JSON Repair', function () {
         fclose($stream);
 
         $decoded = json_decode($result, true);
-        expect($decoded)->toEqual($largeArray);
-    });
+        $this->assertEquals($largeArray, $decoded);
+    }
 
-    test('should process chunks with custom chunk size', function () {
+    public function testShouldProcessChunksWithCustomChunkSize(): void
+    {
         $repairer = new StreamingJsonRepair(8);
         $chunks = ["{name: 'John', age: 30}"];
 
@@ -155,22 +173,23 @@ describe('Streaming JSON Repair', function () {
             $result .= $chunk;
         }
 
-        expect($result)->toBe('{"name": "John", "age": 30}');
-    });
+        $this->assertSame('{"name": "John", "age": 30}', $result);
+    }
 
-    test('should handle whitespace-only stream', function () {
+    public function testShouldHandleWhitespaceOnlyStream(): void
+    {
         $stream = fopen('php://memory', 'r+');
         fwrite($stream, "   \n  \t  ");
         rewind($stream);
 
-        expect(function () use ($stream) {
-            jsonrepairStreamToString($stream);
-        })->toThrow(JsonRepair\Utils\JSONRepairError::class);
+        $this->expectException(JSONRepairError::class);
+        jsonrepairStreamToString($stream);
 
         fclose($stream);
-    });
+    }
 
-    test('should handle malformed nested structures', function () {
+    public function testShouldHandleMalformedNestedStructures(): void
+    {
         $stream = fopen('php://memory', 'r+');
         fwrite($stream, '[{"a": 1, {"b": 2}]');
         rewind($stream);
@@ -178,6 +197,6 @@ describe('Streaming JSON Repair', function () {
         $result = jsonrepairStreamToString($stream);
         fclose($stream);
 
-        expect($result)->toBe('[{"a": 1}, {"b": 2}]');
-    });
-});
+        $this->assertSame('[{"a": 1}, {"b": 2}]', $result);
+    }
+}
