@@ -18,11 +18,14 @@ class StreamingJsonRepair
     private bool $inString = false;
     private int $braceDepth = 0;
     private int $bracketDepth = 0;
+    private bool $beautify = false;
 
     public function __construct(
-        private readonly int $chunkSize = 65536
+        private readonly int $chunkSize = 65536,
+        bool $beautify = false
     ) {
         $this->regularRepair = new JsonRepair();
+        $this->beautify = $beautify;
     }
 
     /**
@@ -72,7 +75,7 @@ class StreamingJsonRepair
 
         // Try to extract complete JSON values
         while ($completeJson = $this->extractCompleteJson()) {
-            $repaired = $this->regularRepair->repair($completeJson);
+            $repaired = $this->regularRepair->repair($completeJson, $this->beautify);
             yield $repaired;
         }
     }
@@ -161,7 +164,7 @@ class StreamingJsonRepair
     private function flushBuffer(): \Generator
     {
         if ($this->buffer !== '') {
-            $repaired = $this->regularRepair->repair($this->buffer);
+            $repaired = $this->regularRepair->repair($this->buffer, $this->beautify);
             yield $repaired;
             $this->buffer = '';
         }

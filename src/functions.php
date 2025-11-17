@@ -16,12 +16,19 @@ use JsonRepair\Utils\JSONRepairError;
  *   $repaired = jsonrepair($json);
  *   echo $repaired; // {"name": "John"}
  *
+ * Example with beautify:
+ *   $json = '{"message": "He said "hello" to me"}';
+ *   $repaired = jsonrepair($json, true);
+ *   echo $repaired; // {"message": "He said "hello" to me"}
+ *
+ * @param string $text The JSON text to repair
+ * @param bool $beautify Whether to replace inner quotes with " instead of escaping them
  * @throws JSONRepairError When JSON cannot be repaired
  */
-function jsonrepair(string $text): string
+function jsonrepair(string $text, bool $beautify = false): string
 {
     $repairer = new JsonRepair();
-    return $repairer->repair($text);
+    return $repairer->repair($text, $beautify);
 }
 
 /**
@@ -36,12 +43,13 @@ function jsonrepair(string $text): string
  *
  * @param resource|iterable<string> $input Stream resource or iterable of chunks
  * @param int $chunkSize Size of chunks to process
+ * @param bool $beautify Whether to replace inner quotes with " instead of escaping them
  * @return \Generator<string> Yields repaired JSON chunks
  * @throws JSONRepairError When JSON cannot be repaired
  */
-function jsonrepairStream($input, int $chunkSize = 65536): \Generator
+function jsonrepairStream($input, int $chunkSize = 65536, bool $beautify = false): \Generator
 {
-    $repairer = new StreamingJsonRepair($chunkSize);
+    $repairer = new StreamingJsonRepair($chunkSize, $beautify);
     yield from $repairer->repairStream($input);
 }
 
@@ -55,11 +63,12 @@ function jsonrepairStream($input, int $chunkSize = 65536): \Generator
  *
  * @param resource|iterable<string> $input Stream resource or iterable of chunks
  * @param int $chunkSize Size of chunks to process
+ * @param bool $beautify Whether to replace inner quotes with " instead of escaping them
  * @return string Complete repaired JSON
  * @throws JSONRepairError When JSON cannot be repaired
  */
-function jsonrepairStreamToString($input, int $chunkSize = 65536): string
+function jsonrepairStreamToString($input, int $chunkSize = 65536, bool $beautify = false): string
 {
-    $repairer = new StreamingJsonRepair($chunkSize);
+    $repairer = new StreamingJsonRepair($chunkSize, $beautify);
     return $repairer->repairStreamToString($input);
 }

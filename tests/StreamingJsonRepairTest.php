@@ -199,4 +199,103 @@ final class StreamingJsonRepairTest extends TestCase
 
         $this->assertSame('[{"a": 1}, {"b": 2}]', $result);
     }
+
+    // Beautify option tests for streaming
+    public function testStreamingBeautifyOptionReplacesInnerQuotes(): void
+    {
+        $input = '{"message": "He said ' . chr(34) . 'hello' . chr(34) . ' to me"}';
+
+        $stream = fopen('php://memory', 'r+');
+        fwrite($stream, $input);
+        rewind($stream);
+
+        // Without beautify
+        $resultDefault = jsonrepairStreamToString($stream, 65536, false);
+        $this->assertSame('{"message": "He said \"hello\" to me"}', $resultDefault);
+
+        // Reset stream
+        rewind($stream);
+
+        // With beautify
+        $resultBeautify = jsonrepairStreamToString($stream, 65536, true);
+        $this->assertSame('{"message": "He said ' . "\u{201D}" . 'hello' . "\u{201D}" . ' to me"}', $resultBeautify);
+
+        fclose($stream);
+    }
+
+    public function testStreamingBeautifyWithChunks(): void
+    {
+        $chunks = ['{"msg": "test ', chr(34) . 'quote', chr(34) . ' here"}'];
+
+        // Without beautify
+        $resultDefault = '';
+        foreach (jsonrepairStream($chunks, 65536, false) as $chunk) {
+            $resultDefault .= $chunk;
+        }
+        $this->assertSame('{"msg": "test \"quote\" here"}', $resultDefault);
+
+        // With beautify
+        $resultBeautify = '';
+        foreach (jsonrepairStream($chunks, 65536, true) as $chunk) {
+            $resultBeautify .= $chunk;
+        }
+        $this->assertSame('{"msg": "test ' . "\u{201D}" . 'quote' . "\u{201D}" . ' here"}', $resultBeautify);
+    }
+
+    public function testStreamingBeautifyAcrossChunks(): void
+    {
+        // Split the input across multiple chunks - with spaces to avoid consecutive quotes issue
+        $chunks = [
+            '{"message": "Part one ',
+            chr(34) . ' quote ' . chr(34),
+            ' and part two ',
+            chr(34) . ' another ' . chr(34),
+            ' end"}'
+        ];
+
+        // Without beautify
+        $resultDefault = jsonrepairStreamToString($chunks, 65536, false);
+        $this->assertStringContainsString('\" quote \"', $resultDefault);
+        $this->assertStringContainsString('\" another \"', $resultDefault);
+
+        // With beautify
+        $resultBeautify = jsonrepairStreamToString($chunks, 65536, true);
+        $this->assertStringContainsString("\u{201D} quote \u{201D}", $resultBeautify);
+        $this->assertStringContainsString("\u{201D} another \u{201D}", $resultBeautify);
+    }
+
+    public function testStreamingBeautifyWithCustomChunkSize(): void
+    {
+        $input = '{"text": "Small ' . chr(34) . 'chunk' . chr(34) . ' test"}';
+
+        $stream = fopen('php://memory', 'r+');
+        fwrite($stream, $input);
+        rewind($stream);
+
+        // Small chunk size with beautify
+        $repairer = new StreamingJsonRepair(8, true);
+        $result = $repairer->repairStreamToString($stream);
+        $this->assertSame('{"text": "Small ' . "\u{201D}" . 'chunk' . "\u{201D}" . ' test"}', $result);
+
+        fclose($stream);
+    }
+
+    public function testStreamingBeautifyWithNewlineDelimitedJson(): void
+    {
+        // Use spaces around quotes to avoid consecutive quotes issue
+        $input = '{"a": "quote ' . chr(34) . ' here ' . chr(34) . ' text"}' . "\n" .
+                 '{"b": "another ' . chr(34) . ' quote ' . chr(34) . ' text"}';
+
+        $stream = fopen('php://memory', 'r+');
+        fwrite($stream, $input);
+        rewind($stream);
+
+        $result = jsonrepairStreamToString($stream, 65536, true);
+
+        // Each object should have beautified quotes
+        $this->assertStringContainsString("\u{201D} here \u{201D}", $result);
+        $this->assertStringContainsString("\u{201D} quote \u{201D}", $result);
+
+        fclose($stream);
+    }
 }

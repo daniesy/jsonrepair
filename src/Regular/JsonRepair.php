@@ -35,17 +35,21 @@ class JsonRepair
     private string $text;
     private int $i = 0;
     private string $output = '';
+    private bool $beautify = false;
 
     /**
      * Repair a string containing an invalid JSON document
      *
+     * @param string $text The JSON text to repair
+     * @param bool $beautify Whether to replace inner quotes with " instead of escaping them
      * @throws JSONRepairError
      */
-    public function repair(string $text): string
+    public function repair(string $text, bool $beautify = false): string
     {
         $this->text = $text;
         $this->i = 0;
         $this->output = '';
+        $this->beautify = $beautify;
 
         $this->parseMarkdownCodeBlock(['```', '[```', '{```']);
 
@@ -461,7 +465,12 @@ class JsonRepair
 
                     $this->output = substr($this->output, 0, $oBefore);
                     $this->i = $iQuote + 1;
-                    $str = substr($str, 0, $oQuote) . '\\' . substr($str, $oQuote);
+                    // If beautify is enabled, replace the quote with curly quote instead of escaping
+                    if ($this->beautify) {
+                        $str = substr($str, 0, $oQuote) . "\u{201D}" . substr($str, $oQuote + 1);
+                    } else {
+                        $str = substr($str, 0, $oQuote) . '\\' . substr($str, $oQuote);
+                    }
                 } elseif (($this->text[$this->i] ?? '') === '\\') {
                     $char = $this->text[$this->i + 1] ?? '';
                     $escapeChar = self::ESCAPE_CHARACTERS[$char] ?? null;
@@ -507,7 +516,12 @@ class JsonRepair
                     $char = $this->text[$this->i] ?? '';
 
                     if ($char === '"' && ($this->text[$this->i - 1] ?? '') !== '\\') {
-                        $str .= "\\{$char}";
+                        // If beautify is enabled, replace with " instead of escaping
+                        if ($this->beautify) {
+                            $str .= "\u{201D}";  // Right double quotation mark (U+201D)
+                        } else {
+                            $str .= "\\{$char}";
+                        }
                         $this->i++;
                     } elseif (StringUtils::isControlCharacter($char)) {
                         $str .= self::CONTROL_CHARACTERS[$char];
